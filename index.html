@@ -5,10 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chất lượng không khí Hà Nội (Trung bình 2024)</title>
 
-    <!-- 1. Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- 2. Leaflet.js (for the map) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
         crossorigin="" />
@@ -16,14 +14,12 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
         
-    <!-- 3. Turf.js (for point-in-polygon geolocation) -->
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
-    <!-- 4. Custom Styles -->
     <style>
         /* Chiều cao bản đồ linh hoạt theo kích thước màn hình */
         #map {
-            height: clamp(320px, 60vh, 520px);
+            height: clamp(280px, 55vh, 520px);
             border-radius: 0.75rem; /* góc bo mềm mại hơn */
         }
         
@@ -39,26 +35,82 @@
             height: 40px;
             animation: spin 1s linear infinite;
         }
+        
+        /* --- LEGEND STYLES --- */
+        #map-legend {
+            margin-top: 1rem;
+            padding: 0.85rem;
+            border-radius: 0.75rem; 
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            font-size: 0.85rem; 
+            line-height: 1.4;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            white-space: nowrap;
+        }
+
+        .legend-square {
+            width: 14px;
+            height: 14px;
+            margin-right: 6px;
+            border: 1px solid #ccc; 
+            flex-shrink: 0; /* Ngăn ô vuông bị co lại */
+        }
+
+        #ranking-table {
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        #ranking-table th,
+        #ranking-table td {
+            word-break: normal;
+            white-space: normal;
+            hyphens: auto;
+        }
+        /* --------------------- */
+
+        @media (max-width: 640px) {
+            #map {
+                height: 375px;
+            }
+            #map-legend {
+                margin-top: 0.75rem;
+                padding: 0.75rem;
+                font-size: 0.8rem;
+            }
+            .legend-item {
+                margin-bottom: 2px;
+            }
+            #ranking-table {
+                font-size: 0.75rem;
+            }
+            #ranking-table th,
+            #ranking-table td {
+                padding: 0.45rem 0.3rem;
+                font-size: 0.7rem;
+            }
+        }
 
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-lg md:text-xl leading-relaxed p-4 md:p-8">
+<body class="bg-gray-100 font-sans text-base md:text-lg leading-relaxed p-3 md:p-8">
 
-    <div class="max-w-[1000px] mx-auto space-y-8">
-        <!-- Main Content Card -->
-        <main class="bg-white p-6 md:p-8 rounded-xl shadow-lg space-y-6">
+    <div class="max-w-[1000px] mx-auto space-y-4 md:space-y-6">
+        <main class="bg-white p-4 md:p-8 rounded-xl shadow-lg space-y-4 md:space-y-5">
 
-            <!-- User Controls -->
-            <div class="flex flex-col md:flex-row gap-4">
-                <!-- Ward Selector -->
-                <div class="flex-1">
-                    <select id="ward-select" class="w-full p-4 text-lg border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" aria-label="Chọn phường hoặc xã">
-                        <option>Đang tải danh sách phường...</option>
-                    </select>
+            <div class="flex flex-col md:flex-row gap-3 md:gap-4">
+                <div class="flex-1 space-y-1.5">
+                    <input id="ward-search" type="search" placeholder="Tìm phường/xã..." class="w-full p-3 md:p-4 text-base md:text-lg border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" aria-label="Tìm kiếm phường hoặc xã" autocomplete="off" />
+                    <div id="ward-suggestions" class="space-y-1 text-sm text-gray-600 hidden"></div>
                 </div>
-                <!-- Geolocation Button -->
                 <div class="flex-shrink-0 md:self-end">
-                    <button id="location-btn" class="w-full md:w-auto bg-orange-500 text-white text-lg font-bold px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2">
+                    <button id="location-btn" class="w-full md:w-auto bg-orange-500 text-white text-base md:text-lg font-bold px-4 py-2.5 md:px-6 md:py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
                         </svg>
@@ -67,88 +119,61 @@
                 </div>
             </div>
             
-            <!-- Message/Status Area -->
-            <div id="message-area" class="text-center text-gray-500 mb-4 hidden"></div>
+            <div id="message-area" class="text-center text-gray-500 text-sm md:text-base mb-3 hidden"></div>
 
-            <!-- Results State -->
-            <div id="results-state" class="space-y-6 hidden">
+            <div id="results-state" class="space-y-4 md:space-y-5 hidden">
                 <div class="flex flex-col items-center justify-center">
-                    <!-- Cigarette Count -->
-                    <div class="w-full text-center bg-orange-50 p-6 rounded-lg space-y-4">
-                        <h3 class="text-2xl md:text-3xl font-bold text-gray-800">Không khí ô nhiễm tương đương hút <span id="cigarette-count" class="text-orange-500 text-3xl md:text-4xl">...</span> điếu thuốc</h3>
-                        <div class="flex flex-wrap items-center justify-center gap-3">
-                            <button type="button" class="mode-btn px-5 py-3 rounded-full border text-lg font-semibold transition-colors duration-150" data-mode="daily">mỗi ngày</button>
-                            <button type="button" class="mode-btn px-5 py-3 rounded-full border text-lg font-semibold transition-colors duration-150" data-mode="weekly">mỗi tuần</button>
-                            <button type="button" class="mode-btn px-5 py-3 rounded-full border text-lg font-semibold transition-colors duration-150" data-mode="monthly">mỗi tháng</button>
+                    <div class="w-full text-center bg-orange-50 p-5 md:p-6 rounded-lg space-y-2.5 md:space-y-3">
+                        <h3 class="text-lg md:text-xl text-gray-800">Không khí tại <span id="city-name" class="text-orange-500 font-bold"></span> ô nhiễm tương đương hút <span id="cigarette-count" class="text-orange-500 text-xl font-bold md:text-2xl">...</span> điếu thuốc</h3>
+                        <div class="flex items-center justify-center gap-1 md:gap-3 flex-nowrap overflow-x-auto">
+                            <button type="button" class="mode-btn px-3 md:px-5 py-2 md:py-3 rounded-full border text-sm md:text-lg font-semibold transition-colors duration-150 whitespace-nowrap" data-mode="daily">mỗi ngày</button>
+                            <button type="button" class="mode-btn px-3 md:px-5 py-2 md:py-3 rounded-full border text-sm md:text-lg font-semibold transition-colors duration-150 whitespace-nowrap" data-mode="weekly">mỗi tuần</button>
+                            <button type="button" class="mode-btn px-3 md:px-5 py-2 md:py-3 rounded-full border text-sm md:text-lg font-semibold transition-colors duration-150 whitespace-nowrap" data-mode="monthly">mỗi tháng</button>
                         </div>
-                        <p id="population-info" class="text-lg text-orange-600 font-medium"></p>
+                        <p id="population-info" class="text-base md:text-lg text-orange-600 font-medium"></p>
                     </div>
                 </div>
                 
-                <p id="aqi-summary" class="text-center text-lg text-gray-700 font-semibold space-x-1">
-                    Chỉ số AQI PM2.5 trung bình 2024 tại
-                    <span id="city-name" class="text-orange-500 font-bold">...</span>:
-                    <span id="aqi-value" class="font-bold text-xl md:text-xl">...</span>
-                    <span id="aqi-rank" class="text-gray-500 font-medium">(xếp hạng ...)</span>.
-                </p>
             </div>
 
         </main>
 
-        <!-- Map Section -->
-        <section class="bg-white p-6 rounded-xl shadow-lg">
-            <h3 class="text-2xl font-bold text-gray-700 mb-4">Bản đồ chất lượng không khí theo phường/xã Hà Nội</h3>
+        <section class="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <h3 class="text-lg md:text-xl font-bold text-gray-700 mb-2 md:mb-3">Bản đồ chất lượng không khí</h3>
             <div id="map"></div>
+            <div id="map-legend" class="text-gray-700"></div>
         </section>
 
-        <!-- Ranking Section -->
-        <section class="bg-white p-6 rounded-xl shadow-lg">
-            <h3 class="text-2xl font-bold text-gray-700 mb-4">Bảng xếp hạng chất lượng không khí Hà Nội</h3>
-            <div class="grid gap-6 md:grid-cols-2">
+        <section class="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <h3 class="text-lg md:text-xl font-bold text-gray-700 mb-2 md:mb-3">Xếp hạng chất lượng không khí</h3>
+            <div class="grid gap-4 md:gap-6 md:grid-cols-2">
                 <div>
-                    <h4 class="text-xl font-semibold text-gray-700 mb-2">Top 3 tệ nhất</h4>
+                    <h4 class="text-lg md:text-xl font-semibold text-gray-700 mb-2">Tệ nhất</h4>
                     <ol id="top-worst-list" class="list-decimal list-inside space-y-1 text-gray-700"></ol>
                 </div>
                 <div>
-                    <h4 class="text-xl font-semibold text-gray-700 mb-2">Top 3 tốt nhất</h4>
+                    <h4 class="text-lg md:text-xl font-semibold text-gray-700 mb-2">Tốt nhất</h4>
                     <ol id="top-best-list" class="list-decimal list-inside space-y-1 text-gray-700"></ol>
                 </div>
             </div>
-            <button id="toggle-table-btn" class="mt-6 px-4 py-3 rounded-lg border border-orange-400 text-orange-600 font-semibold hover:bg-orange-50 transition-colors duration-150">Xem toàn bộ bảng</button>
-            <div id="full-table-container" class="mt-6 hidden space-y-4">
-                <div class="flex flex-wrap gap-3 items-center">
-                    <input id="ranking-search" type="search" placeholder="Tìm phường/xã..." class="flex-1 min-w-[220px] px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                    <select id="ranking-type-filter" class="px-4 py-3 text-lg border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <option value="">Tất cả loại đơn vị</option>
-                    </select>
-                    <select id="ranking-sort-select" class="px-4 py-3 text-lg border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-orange-400">
-                        <option value="aqi_desc">AQI cao → thấp</option>
-                        <option value="aqi_asc">AQI thấp → cao</option>
-                        <option value="rank_asc">Thứ hạng xấu nhất → tốt nhất</option>
-                        <option value="rank_desc">Thứ hạng tốt nhất → xấu nhất</option>
-                        <option value="name_asc">Tên A → Z</option>
-                        <option value="name_desc">Tên Z → A</option>
-                        <option value="cigarettes_desc">Điếu thuốc cao → thấp</option>
-                        <option value="cigarettes_asc">Điếu thuốc thấp → cao</option>
-                        <option value="population_desc">Dân số cao → thấp</option>
-                        <option value="population_asc">Dân số thấp → cao</option>
-                        <option value="type_asc">Loại A → Z</option>
-                        <option value="type_desc">Loại Z → A</option>
-                    </select>
+            <button id="toggle-table-btn" class="mt-4 px-4 py-3 rounded-lg border border-orange-400 text-orange-600 font-semibold hover:bg-orange-50 transition-colors duration-150">Xem toàn bộ phường xã</button>
+            <div id="full-table-container" class="mt-4 hidden space-y-2.5 md:space-y-3.5">
+                <div class="flex flex-wrap gap-2 md:gap-3 items-center">
+                    <input id="ranking-search" type="search" placeholder="Tìm phường/xã..." class="flex-1 min-w-[220px] px-3 md:px-4 py-2.5 md:py-3 text-base md:text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 text-base">
+                    <table id="ranking-table" class="divide-y divide-gray-200 text-xs md:text-sm">
                         <thead class="bg-gray-100 text-gray-600 uppercase tracking-wide text-sm">
                             <tr>
                                 <th class="px-4 py-2 text-left">
                                     <button type="button" class="flex items-center gap-1" data-sort-key="rank" data-sort-default="asc">
-                                        <span>Thứ hạng</span>
+                                        <span>Xếp hạng ô nhiễm</span>
                                         <span class="text-gray-400 text-sm" data-sort-indicator="rank"></span>
                                     </button>
                                 </th>
                                 <th class="px-4 py-2 text-left">
                                     <button type="button" class="flex items-center gap-1" data-sort-key="name" data-sort-default="asc">
-                                        <span>Phường/xã</span>
+                                        <span>ĐVHC</span>
                                         <span class="text-gray-400 text-sm" data-sort-indicator="name"></span>
                                     </button>
                                 </th>
@@ -159,15 +184,9 @@
                                     </button>
                                 </th>
                                 <th class="px-4 py-2 text-left">
-                                    <button type="button" class="flex items-center gap-1" data-sort-key="cigarettes" data-sort-default="desc">
-                                        <span>Điếu thuốc/ngày</span>
-                                        <span class="text-gray-400 text-sm" data-sort-indicator="cigarettes"></span>
-                                    </button>
-                                </th>
-                                <th class="px-4 py-2 text-left">
-                                    <button type="button" class="flex items-center gap-1" data-sort-key="type" data-sort-default="asc">
-                                        <span>Loại</span>
-                                        <span class="text-gray-400 text-sm" data-sort-indicator="type"></span>
+                                    <button type="button" class="flex items-center gap-1" data-sort-key="pm25" data-sort-default="desc">
+                                        <span>PM2.5 (µg/m³)</span>
+                                        <span class="text-gray-400 text-sm" data-sort-indicator="pm25"></span>
                                     </button>
                                 </th>
                                 <th class="px-4 py-2 text-left">
@@ -181,31 +200,33 @@
                         <tbody id="ranking-table-body" class="divide-y divide-gray-200 text-gray-700"></tbody>
                     </table>
                 </div>
-                <div class="flex flex-col md:flex-row items-center justify-between gap-4 text-base text-gray-700">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-3 text-sm md:text-base text-gray-700">
                     <div id="pagination-info" class="font-medium"></div>
                     <div class="flex gap-2">
-                        <button id="prev-page-btn" class="px-5 py-3 text-lg rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-150">Trang trước</button>
-                        <button id="next-page-btn" class="px-5 py-3 text-lg rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-150">Trang sau</button>
+                        <button id="prev-page-btn" class="px-4 py-2.5 text-base md:text-lg rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-150">Trang trước</button>
+                        <button id="next-page-btn" class="px-4 py-2.5 text-base md:text-lg rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-150">Trang sau</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Footer / About Section -->
-        <footer class="text-center text-gray-500 text-base">
-            <p>Dữ liệu chất lượng không khí trung bình năm 2024 do <a href="https://geoi.edu.vn/vi/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">Dự án GEOI</a> thuộc Trường ĐH Công nghệ, ĐHQG Hà Nội cung cấp cho VnExpress.</p>
-            <p>Cách tính dựa trên <a href="http://berkeleyearth.org/archive/air-pollution-and-cigarette-equivalence/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">nghiên cứu của Berkeley Earth</a>, ước tính rằng 1 điếu thuốc/ngày tương đương với nồng độ PM2.5 khoảng 22 µg/m³.</p>
+        <footer class="text-center text-gray-400 text-xs md:text-base">
+            <p>Dữ liệu chất lượng không khí trung bình năm được tính toán từ trung bình các ngày trong năm, do <a href="https://geoi.edu.vn/vi/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">nhóm nghiên cứu GEOI</a> (Trường ĐH Công nghệ, ĐHQG Hà Nội) thực hiện.</p>
+            <p>Cách quy đổi dựa trên <a href="http://berkeleyearth.org/archive/air-pollution-and-cigarette-equivalence/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">nghiên cứu của Berkeley Earth</a>, trong đó 1 điếu thuốc/ngày tương đương với nồng độ PM2.5 khoảng 22 µg/m³.</p>
             <p>Dữ liệu ranh giới phường/xã từ NXB Tài nguyên - Môi trường và Bản đồ Việt Nam. Bản đồ nền từ Google Satellite</p>
         </footer>
     </div>
 
-    <!-- 5. Main JavaScript Logic -->
     <script>
         // --- GLOBAL VARIABLES ---
         let map;
         let geoJsonLayer;
         let wardData; // Will hold our fetched GeoJSON
-        const wardSelect = document.getElementById('ward-select');
+        let featureIndexByName = new Map();
+        let suggestionSource = [];
+        let layerByName = new Map();
+        const wardSearchInput = document.getElementById('ward-search');
+        const wardSuggestions = document.getElementById('ward-suggestions');
         const locationBtn = document.getElementById('location-btn');
         const messageArea = document.getElementById('message-area');
         const populationInfo = document.getElementById('population-info');
@@ -218,8 +239,6 @@
         const fullTableContainer = document.getElementById('full-table-container');
         const resultsState = document.getElementById('results-state');
         const rankingSearch = document.getElementById('ranking-search');
-        const rankingTypeFilter = document.getElementById('ranking-type-filter');
-        const rankingSortSelect = document.getElementById('ranking-sort-select');
         const rankingTableBody = document.getElementById('ranking-table-body');
         const paginationInfo = document.getElementById('pagination-info');
         const prevPageBtn = document.getElementById('prev-page-btn');
@@ -227,6 +246,7 @@
         const cigaretteCountEl = document.getElementById('cigarette-count');
         const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
         const sortButtons = Array.from(document.querySelectorAll('button[data-sort-key]'));
+        const mapLegendContainer = document.getElementById('map-legend');
         const sortIndicators = new Map();
         sortButtons.forEach(btn => {
             const key = btn.dataset.sortKey;
@@ -235,6 +255,12 @@
                 sortIndicators.set(key, indicator);
             }
         });
+        if (wardSearchInput) {
+            wardSearchInput.disabled = true;
+        }
+        if (wardSuggestions) {
+            wardSuggestions.innerHTML = '<p class="text-gray-400 text-sm">Đang tải danh sách phường/xã...</p>';
+        }
 
         const modeMultipliers = { daily: 1, weekly: 7, monthly: 30 };
         let baseCigarettes = 0;
@@ -244,8 +270,36 @@
         let currentSort = 'aqi_desc';
         const rowsPerPage = 10;
         let currentPage = 1;
-        if (rankingSortSelect) {
-            rankingSortSelect.value = currentSort;
+        let currentSuggestions = [];
+        let activeTooltip = null;
+
+        const formatDecimal = (value, fractionDigits = 1) => {
+            if (!Number.isFinite(value)) {
+                return '—';
+            }
+            return value.toFixed(fractionDigits).replace('.', ',');
+        };
+        
+        // Định nghĩa thang màu AQI cho Legend
+        const aqiColorScale = [
+            // Sắp xếp theo thứ tự giảm dần của chất lượng (tăng dần của AQI) để hiển thị trong legend
+            { color: '#f39c12', range: '101 - 150', label: 'Kém' },
+            { color: '#f1c40f', range: '51 - 100', label: 'Trung bình' },
+            { color: '#2ecc71', range: '0 - 50', label: 'Tốt' }
+        ];
+
+        function renderMapLegend() {
+            if (!mapLegendContainer) return;
+            let html = '<div class="font-bold mb-2">Chỉ số chất lượng không khí (AQI)</div>';
+            html += '<div class="space-y-1">';
+            aqiColorScale.forEach(item => {
+                html += `<div class="legend-item text-gray-700">
+                            <div class="legend-square" style="background-color: ${item.color};"></div>
+                            <div><span class="font-semibold">${item.range}</span> (${item.label})</div>
+                         </div>`;
+            });
+            html += '</div>';
+            mapLegendContainer.innerHTML = html;
         }
 
         // --- CORE FUNCTIONS ---
@@ -261,12 +315,14 @@
             return parseNumericProperty(properties.Pop ?? properties.population ?? properties.pop);
         }
 
+        // Ưu tiên trường 'AQI' cho chỉ số AQI
         function getWardAqi(properties = {}) {
-            return parseNumericProperty(properties.aqi_mean ?? properties['Air Quality'] ?? properties.aqi);
+            return parseNumericProperty(properties.AQI ?? properties.aqi_mean ?? properties.aqi ?? properties['Air Quality']);
         }
 
+        // Ưu tiên trường 'PM2.5' cho nồng độ PM2.5
         function getWardPm25(properties = {}) {
-            return parseNumericProperty(properties.pm25_mean ?? properties.pm25 ?? properties['Air Quality']);
+            return parseNumericProperty(properties['PM2.5'] ?? properties.pm25_mean ?? properties.pm25 ?? properties['Air Quality']);
         }
 
         /**
@@ -287,7 +343,7 @@
         function updateModeButtons() {
             modeButtons.forEach(btn => {
                 const isActive = btn.dataset.mode === currentMode;
-                btn.className = `mode-btn px-5 py-3 rounded-full border text-lg font-semibold transition-colors duration-150 ${isActive ? 'bg-orange-500 text-white border-orange-500 shadow' : 'bg-white text-gray-500 border-gray-300 hover:border-orange-300 hover:text-orange-600'}`;
+                btn.className = `mode-btn px-3 md:px-5 py-2 md:py-3 rounded-full border text-sm md:text-lg font-semibold transition-colors duration-150 whitespace-nowrap ${isActive ? 'bg-orange-500 text-white border-orange-500 shadow' : 'bg-white text-gray-500 border-gray-300 hover:border-orange-300 hover:text-orange-600'}`;
             });
         }
 
@@ -295,7 +351,7 @@
             const multiplier = modeMultipliers[currentMode] ?? 1;
             const value = baseCigarettes * multiplier;
             if (cigaretteCountEl) {
-                cigaretteCountEl.innerText = value.toFixed(1);
+                cigaretteCountEl.innerText = formatDecimal(value, 1);
             }
         }
 
@@ -316,6 +372,10 @@
             if (resultsState) {
                 resultsState.classList.remove('hidden');
             }
+        }
+
+        function isMobileView() {
+            return window.matchMedia('(max-width: 640px)').matches;
         }
 
         /**
@@ -346,15 +406,23 @@
             const entry = rankingByName.get(name);
             const total = rankingData.length;
             if (entry && total > 0) {
-                return `<div class="font-semibold text-base">${name}</div><div class="text-sm">AQI: ${entry.aqi.toFixed(1)} · Hạng #${entry.rankWorst}/${total}</div>`;
+                // Sửa: Làm tròn AQI về 0 số thập phân
+                return `<div class="font-semibold text-base">${name}</div><div class="text-sm">AQI: ${formatDecimal(entry.aqi, 0)} · Hạng #${entry.rankWorst}/${total}</div>`;
             }
             const aqi = getWardAqi(feature.properties || {});
-            const aqiText = Number.isFinite(aqi) ? aqi.toFixed(1) : '—';
+            // Sửa: Làm tròn AQI về 0 số thập phân
+            const aqiText = formatDecimal(aqi, 0);
             return `<div class="font-semibold text-base">${name}</div><div class="text-sm">AQI: ${aqiText}</div>`;
         }
 
         function updateLayerTooltip(layer) {
             if (!layer || !layer.feature) return;
+            if (isMobileView()) {
+                if (layer.unbindTooltip) {
+                    layer.unbindTooltip();
+                }
+                return;
+            }
             const content = getTooltipContent(layer.feature);
             const tooltip = layer.getTooltip ? layer.getTooltip() : null;
             if (tooltip && tooltip.setContent) {
@@ -364,12 +432,25 @@
             }
         }
 
+        function handleTooltipOpen(e) {
+            if (isMobileView()) return;
+            if (activeTooltip && activeTooltip !== e.tooltip && map) {
+                map.closeTooltip(activeTooltip);
+            }
+            activeTooltip = e.tooltip;
+        }
+
+        function handleTooltipClose(e) {
+            if (activeTooltip === e.tooltip) {
+                activeTooltip = null;
+            }
+        }
+
         const sortDefaults = {
             rank: 'asc',
             name: 'asc',
-            type: 'asc',
             aqi: 'desc',
-            cigarettes: 'desc',
+            pm25: 'desc',
             population: 'desc'
         };
 
@@ -378,12 +459,10 @@
             rank_desc: (a, b) => b.rankWorst - a.rankWorst,
             name_asc: (a, b) => a.name.localeCompare(b.name, 'vi'),
             name_desc: (a, b) => b.name.localeCompare(a.name, 'vi'),
-            type_asc: (a, b) => (a.type || '').localeCompare(b.type || '', 'vi'),
-            type_desc: (a, b) => (b.type || '').localeCompare(a.type || '', 'vi'),
             aqi_desc: (a, b) => b.aqi - a.aqi,
             aqi_asc: (a, b) => a.aqi - b.aqi,
-            cigarettes_desc: (a, b) => b.cigarettes - a.cigarettes,
-            cigarettes_asc: (a, b) => a.cigarettes - b.cigarettes,
+            pm25_desc: (a, b) => b.pm25 - a.pm25,
+            pm25_asc: (a, b) => a.pm25 - b.pm25,
             population_desc: (a, b) => (b.population || 0) - (a.population || 0),
             population_asc: (a, b) => (a.population || 0) - (b.population || 0)
         };
@@ -398,7 +477,7 @@
             }
             return pm25 / 22;
         }
-
+        
         /**
          * Fetches and loads the local GeoJSON data, then initializes the map.
          */
@@ -410,26 +489,30 @@
                     throw new Error(`Không thể tải HanoiAQ.geojson: ${response.statusText}`);
                 }
                 wardData = await response.json();
+                buildFeatureLookups(wardData);
+                layerByName = new Map();
 
                 // Initialize the map
                 const mapCenter = [21.0285, 105.8542]; // Center of Hanoi
-                const hanoiBounds = L.latLngBounds([[20.75, 105.3], [21.35, 106.1]]);
+                const hanoiBounds = L.latLngBounds([[20.7, 105.2], [21.3, 106.1]]);
                 map = L.map('map', {
                     attributionControl: false,
                     maxBounds: hanoiBounds,
                     maxBoundsViscosity: 1.0,
                     minZoom: 9
                 }).setView(mapCenter, 10);
-                L.tileLayer('https://mt.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+                L.tileLayer('https://mt.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
                     maxZoom: 18,
                     minZoom: 9
                 }).addTo(map);
                 map.on('drag', () => {
                     map.panInsideBounds(hanoiBounds, { animate: false });
                 });
-
-                // Populate the dropdown menu
-                populateWardSelect(wardData);
+                map.on('tooltipopen', handleTooltipOpen);
+                map.on('tooltipclose', handleTooltipClose);
+                
+                // Setup the ward search input
+                initializeWardSearch(wardData);
 
                 // Add GeoJSON layer
                 geoJsonLayer = L.geoJSON(wardData, {
@@ -437,31 +520,35 @@
                     onEachFeature: (feature, layer) => {
                         // Add click listener to each ward polygon
                         layer.on('click', () => {
-                            // Find the index of the clicked feature
                             const clickedName = getWardName(feature.properties);
-                            const featureIndex = wardData.features.findIndex(f => getWardName(f.properties) === clickedName);
-                            
-                            updateUI(feature.properties);
+                            const featureIndex = getFeatureIndexByName(clickedName);
                             if (featureIndex >= 0) {
-                                wardSelect.value = String(featureIndex);
+                                selectWardByIndex(featureIndex, { fitBounds: false, layer });
+                            } else {
+                                updateUI(feature.properties);
+                                highlightLayer(layer);
                             }
-                            highlightLayer(layer);
                         });
+
+                        const layerName = getWardName(feature.properties);
+                        if (layerName) {
+                            layerByName.set(layerName, layer);
+                        }
 
                         updateLayerTooltip(layer);
                     }
                 }).addTo(map);
 
                 // Zoom the map to fit the bounds of the GeoJSON layer
-                map.fitBounds(geoJsonLayer.getBounds());
+                map.fitBounds(geoJsonLayer.getBounds(), getMobileFitBoundsOptions());
+                refreshMapLayout();
 
                 populateRanking(wardData);
 
                 // Add event listeners for controls
-                wardSelect.addEventListener('change', onWardSelect);
                 locationBtn.addEventListener('click', onLocationClick);
 
-                showMessage("Hãy chọn một phường/xã từ danh sách, bấm vào bản đồ hoặc dùng nút định vị để bắt đầu.", 'info');
+                showMessage("Chọn một phường/xã từ ô tìm kiếm, bấm vào bản đồ hoặc dùng nút định vị để bắt đầu.", 'info');
 
             } catch (error) {
                 console.error("Lỗi khởi tạo ứng dụng:", error);
@@ -491,26 +578,140 @@
             }
         }
 
-        /**
-         * Populates the <select> dropdown with ward names.
-         */
-        function populateWardSelect(data) {
-            wardSelect.innerHTML = ''; // Clear "Loading..."
-            const placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = 'Chọn phường/xã';
-            placeholder.disabled = true;
-            placeholder.selected = true;
-            wardSelect.appendChild(placeholder);
+        function getMobileFitBoundsOptions(baseOptions = {}) {
+            if (!map || window.innerWidth > 640) {
+                return baseOptions;
+            }
+            const size = map.getSize();
+            const paddingValue = Math.round(Math.min(size.x, size.y) * 0.3);
+            return {
+                ...baseOptions,
+                padding: L.point(paddingValue, paddingValue)
+            };
+        }
 
+        function buildFeatureLookups(data) {
+            featureIndexByName = new Map();
+            suggestionSource = [];
+            if (!data || !Array.isArray(data.features)) {
+                return;
+            }
             data.features.forEach((feature, index) => {
-                // *** ASSUMPTION ***: Using 'ten_phuong' for ward name
-                const wardName = getWardName(feature.properties) || `Đơn vị chưa có tên ${index + 1}`;
-                const option = document.createElement('option');
-                option.value = index; // Dùng chỉ số trong mảng làm giá trị
-                option.textContent = wardName;
-                wardSelect.appendChild(option);
+                const name = getWardName(feature.properties);
+                if (!name) return;
+                const normalized = name.trim().toLowerCase();
+                if (!featureIndexByName.has(normalized)) {
+                    featureIndexByName.set(normalized, index);
+                }
+                feature.properties.__featureIndex = index;
+                suggestionSource.push({ name, normalized, index });
             });
+            suggestionSource.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        }
+
+        /**
+         * Prepares the ward search input and default suggestions.
+         */
+        function initializeWardSearch(data) {
+            if (!wardSearchInput || !wardSuggestions) return;
+            const hasData = data && Array.isArray(data.features);
+            wardSearchInput.value = '';
+            wardSearchInput.disabled = !hasData;
+            wardSearchInput.placeholder = hasData ? 'Tìm phường/xã...' : 'Không có dữ liệu';
+            wardSuggestions.innerHTML = '';
+            wardSuggestions.classList.toggle('hidden', true);
+        }
+
+        function getFeatureIndexByName(name = '') {
+            if (!name) return -1;
+            const normalized = name.trim().toLowerCase();
+            return featureIndexByName.has(normalized) ? featureIndexByName.get(normalized) : -1;
+        }
+
+        function getLayerByName(name = '') {
+            if (!name) return null;
+            return layerByName.get(name) || null;
+        }
+
+        function updateWardSuggestions(query = '') {
+            if (!wardSuggestions) return;
+            const trimmedQuery = (query || '').trim();
+            const hasQuery = trimmedQuery.length > 0;
+            wardSuggestions.classList.toggle('hidden', !hasQuery);
+            if (!hasQuery) {
+                wardSuggestions.innerHTML = '';
+                currentSuggestions = [];
+                return;
+            }
+            if (!wardData || !Array.isArray(wardData.features)) {
+                wardSuggestions.innerHTML = '<p class="text-gray-400 text-xs px-2">Đang tải dữ liệu...</p>';
+                currentSuggestions = [];
+                return;
+            }
+
+            if (suggestionSource.length === 0) {
+                wardSuggestions.innerHTML = '<p class="text-gray-400 text-xs px-2 py-1">Chưa có dữ liệu để gợi ý.</p>';
+                currentSuggestions = [];
+                return;
+            }
+
+            const normalized = trimmedQuery.toLowerCase();
+            let pool = suggestionSource.filter(entry => entry.normalized.includes(normalized));
+
+            currentSuggestions = pool.slice(0, 3);
+
+            if (currentSuggestions.length === 0) {
+                wardSuggestions.innerHTML = '<p class="text-gray-400 text-xs px-2 py-1">Không tìm thấy gợi ý phù hợp.</p>';
+                return;
+            }
+
+            wardSuggestions.innerHTML = currentSuggestions.map(item => {
+                return `
+                    <button type="button" class="w-full text-left px-3 py-1.5 rounded-md border border-gray-200 hover:border-orange-400 hover:bg-orange-50 focus:outline-none focus:ring-1 focus:ring-orange-400 transition text-sm" data-suggestion-index="${item.index}">
+                        <span class="block font-medium text-gray-800 truncate">${item.name}</span>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function selectWardByIndex(index, options = {}) {
+            if (!wardData || !wardData.features || typeof index !== 'number' || index < 0 || index >= wardData.features.length) {
+                return;
+            }
+            const feature = wardData.features[index];
+            const name = getWardName(feature.properties);
+            updateUI(feature.properties);
+            if (wardSearchInput) {
+                wardSearchInput.value = name;
+            }
+            if (options.keepSuggestions !== true && wardSuggestions) {
+                wardSuggestions.innerHTML = '';
+                wardSuggestions.classList.add('hidden');
+                currentSuggestions = [];
+            }
+
+            const targetLayer = options.layer || getLayerByName(name);
+            if (targetLayer) {
+                if (options.fitBounds !== false && map && targetLayer.getBounds) {
+                    map.fitBounds(targetLayer.getBounds(), getMobileFitBoundsOptions());
+                }
+                highlightLayer(targetLayer);
+            }
+        }
+
+        function handleWardSearchSubmit(query) {
+            const trimmed = (query || '').trim();
+            if (!trimmed) return;
+            const exactIndex = getFeatureIndexByName(trimmed);
+            if (exactIndex >= 0) {
+                selectWardByIndex(exactIndex);
+                return;
+            }
+            if (currentSuggestions.length > 0) {
+                selectWardByIndex(currentSuggestions[0].index);
+                return;
+            }
+            showMessage('Không tìm thấy phường/xã khớp với tìm kiếm.', 'info');
         }
 
         /**
@@ -525,14 +726,19 @@
             const population = getWardPopulation(properties);
             const rankingEntry = rankingByName.get(name);
             
-            const cigaretteCount = pm25ToCigarettes(pm25);
+            // Lỗi đã được sửa: Tính toán điếu thuốc luôn dùng giá trị PM2.5
+            const cigaretteCount = pm25ToCigarettes(pm25); 
 
             // Update text content
+            if (wardSearchInput && name) {
+                wardSearchInput.value = name;
+            }
             if (cityNameEl) {
                 cityNameEl.innerText = name;
             }
             if (aqiValueEl) {
-                aqiValueEl.innerText = Number.isFinite(aqi) ? aqi.toFixed(1) : '—';
+                // Sửa: Làm tròn AQI về 0 số thập phân
+                aqiValueEl.innerText = formatDecimal(aqi, 0);
             }
             if (aqiRankEl) {
                 if (rankingEntry) {
@@ -564,31 +770,6 @@
         }
 
         /**
-         * Handles the 'change' event from the ward select dropdown.
-         */
-        function onWardSelect(e) {
-            const selectedValue = e.target.value;
-            if (selectedValue === '') {
-                return;
-            }
-            const index = Number(selectedValue);
-            const selectedFeature = wardData.features[index];
-            
-            if (selectedFeature) {
-                updateUI(selectedFeature.properties);
-                
-                // Find and highlight the corresponding map layer
-                const selectedName = getWardName(selectedFeature.properties);
-                geoJsonLayer.eachLayer(layer => {
-                    if (getWardName(layer.feature.properties) === selectedName) {
-                        map.fitBounds(layer.getBounds());
-                        highlightLayer(layer);
-                    }
-                });
-            }
-        }
-
-        /**
          * Builds the AQI ranking datasets and renders summary lists.
          */
         function populateRanking(data) {
@@ -601,21 +782,19 @@
             }
 
             rankingData = data.features
-                .map(feature => {
+                .map((feature, index) => {
                     const properties = feature.properties || {};
                     const name = getWardName(properties);
                     const aqi = getWardAqi(properties);
                     const pm25 = getWardPm25(properties);
                     const population = getWardPopulation(properties);
-                    const type = properties.Type || properties.type || '';
                     return {
                         name,
                         aqi,
                         pm25,
-                        cigarettes: pm25ToCigarettes(pm25),
                         population,
-                        type,
-                        feature
+                        feature,
+                        featureIndex: index
                     };
                 })
                 .filter(entry => entry.name);
@@ -632,7 +811,8 @@
                 topWorstList.innerHTML = '';
                 rankingData.slice(0, 3).forEach(entry => {
                     const li = document.createElement('li');
-                    li.textContent = `${entry.name}: AQI ${entry.aqi.toFixed(1)}`;
+                    // Sửa: Làm tròn AQI về 0 số thập phân
+                    li.textContent = `${entry.name}: AQI ${formatDecimal(entry.aqi, 0)}`;
                     topWorstList.appendChild(li);
                 });
             }
@@ -642,21 +822,10 @@
                 const bestEntries = rankingData.slice(-3).reverse();
                 bestEntries.forEach(entry => {
                     const li = document.createElement('li');
-                    li.textContent = `${entry.name}: AQI ${entry.aqi.toFixed(1)}`;
+                    // Sửa: Làm tròn AQI về 0 số thập phân
+                    li.textContent = `${entry.name}: AQI ${formatDecimal(entry.aqi, 0)}`;
                     topBestList.appendChild(li);
                 });
-            }
-
-            if (rankingTypeFilter) {
-                const types = Array.from(new Set(rankingData.map(entry => entry.type).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'vi'));
-                rankingTypeFilter.innerHTML = '<option value="">Tất cả loại đơn vị</option>';
-                types.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type;
-                    option.textContent = type;
-                    rankingTypeFilter.appendChild(option);
-                });
-                rankingTypeFilter.value = '';
             }
 
             currentPage = 1;
@@ -670,6 +839,10 @@
                 if (currentFeature) {
                     updateUI(currentFeature.properties);
                 }
+            }
+
+            if (wardSearchInput) {
+                updateWardSuggestions(wardSearchInput.value);
             }
         }
 
@@ -686,16 +859,8 @@
                 rows = rows.filter(entry => entry.name.toLowerCase().includes(searchTerm));
             }
 
-            const typeValue = rankingTypeFilter ? rankingTypeFilter.value : '';
-            if (typeValue) {
-                rows = rows.filter(entry => entry.type === typeValue);
-            }
-
             if (!sortComparatorMap[currentSort]) {
                 currentSort = 'aqi_desc';
-            }
-            if (rankingSortSelect && rankingSortSelect.value !== currentSort) {
-                rankingSortSelect.value = currentSort;
             }
 
             rows.sort(sortComparatorMap[currentSort]);
@@ -716,17 +881,17 @@
 
             if (pageRows.length === 0) {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="6" class="px-4 py-4 text-center text-gray-500">Không có dữ liệu phù hợp.</td>`;
+                tr.innerHTML = `<td colspan="5" class="px-4 py-4 text-center text-gray-500">Không có dữ liệu phù hợp.</td>`;
                 rankingTableBody.appendChild(tr);
             } else {
                 pageRows.forEach(entry => {
                     const tr = document.createElement('tr');
+                    // Sửa: Làm tròn AQI về 0 số thập phân
                     tr.innerHTML = `
                         <td class="px-4 py-3 text-gray-700">#${entry.rankWorst}</td>
                         <td class="px-4 py-3 font-semibold text-gray-800">${entry.name}</td>
-                        <td class="px-4 py-3 text-gray-700">${entry.aqi.toFixed(1)}</td>
-                        <td class="px-4 py-3 text-gray-700">${entry.cigarettes.toFixed(1)}</td>
-                        <td class="px-4 py-3 text-gray-700">${entry.type || '—'}</td>
+                        <td class="px-4 py-3 text-gray-700">${formatDecimal(entry.aqi, 0)}</td>
+                        <td class="px-4 py-3 text-gray-700">${formatDecimal(entry.pm25, 1)}</td>
                         <td class="px-4 py-3 text-gray-700">${entry.population > 0 ? Math.round(entry.population).toLocaleString('vi-VN') : '—'}</td>
                     `;
                     rankingTableBody.appendChild(tr);
@@ -831,13 +996,16 @@
 
                     if (foundWard) {
                         const targetName = getWardName(foundWard.properties);
-                        const featureIndex = wardData.features.findIndex(f => getWardName(f.properties) === targetName);
-                        updateUI(foundWard.properties);
+                        const featureIndex = getFeatureIndexByName(targetName);
                         if (featureIndex >= 0) {
-                            wardSelect.value = String(featureIndex);
+                            selectWardByIndex(featureIndex, { layer: foundLayer });
+                        } else {
+                            updateUI(foundWard.properties);
+                            if (foundLayer) {
+                                map.fitBounds(foundLayer.getBounds(), getMobileFitBoundsOptions());
+                                highlightLayer(foundLayer);
+                            }
                         }
-                        map.fitBounds(foundLayer.getBounds());
-                        highlightLayer(foundLayer);
                     } else {
                         showMessage("Vị trí của bạn nằm ngoài phạm vi bản đồ các phường/xã của Hà Nội.", 'warn');
                     }
@@ -889,21 +1057,33 @@
             });
         }
 
+        if (wardSearchInput) {
+            wardSearchInput.addEventListener('input', (event) => {
+                updateWardSuggestions(event.target.value);
+            });
+            wardSearchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    handleWardSearchSubmit(event.target.value);
+                }
+            });
+        }
+
+        if (wardSuggestions) {
+            wardSuggestions.addEventListener('click', (event) => {
+                const target = event.target.closest('button[data-suggestion-index]');
+                if (!target) return;
+                const index = Number(target.dataset.suggestionIndex);
+                if (!Number.isNaN(index)) {
+                    selectWardByIndex(index);
+                }
+            });
+        }
+
         if (rankingSearch) {
             rankingSearch.addEventListener('input', () => {
                 currentPage = 1;
                 refreshRankingTable();
-            });
-        }
-        if (rankingTypeFilter) {
-            rankingTypeFilter.addEventListener('change', () => {
-                currentPage = 1;
-                refreshRankingTable();
-            });
-        }
-        if (rankingSortSelect) {
-            rankingSortSelect.addEventListener('change', (event) => {
-                setSort(event.target.value);
             });
         }
         sortButtons.forEach(btn => {
@@ -923,10 +1103,22 @@
             });
         }
 
+        function refreshMapLayout() {
+            if (map) {
+                map.invalidateSize();
+            }
+            if (geoJsonLayer) {
+                geoJsonLayer.eachLayer(updateLayerTooltip);
+            }
+        }
+
+        window.addEventListener('resize', refreshMapLayout);
+
         updateModeButtons();
         updateCigaretteDisplay();
         
         // When the page finishes loading, initialize the app
+        renderMapLegend();
         window.onload = initializeMapAndData;
 
     </script>
