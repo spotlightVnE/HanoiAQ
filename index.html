@@ -17,154 +17,49 @@
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
     <style>
-        body {
-            padding-left: 1rem;
-            padding-right: 1rem;
+        *, *::before, *::after {
+            box-sizing: border-box;
         }
 
-        .hero-title {
-            white-space: nowrap;
-            overflow-x: auto;
-        }
-
-        #results-state > div {
-            padding: 20px 40px !important;
-        }
-
-        /* --- MAP & HERO STYLES --- */
+        /* --- MAP STYLES --- */
         #map {
-            height: clamp(363px, 72.6vh, 726px);
+            min-height: 280px;
+            height: 100%;
+            flex: 1 1 auto;
             border-radius: 0.75rem;
             width: 100%;
             z-index: 1;
         }
 
-        .ward-search-wrapper {
-            position: relative;
-            z-index: 20;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* --- SEARCH INPUT --- */
+        /* --- SEARCH INPUT STYLES --- */
         #ward-search {
-            min-width: 140px;
+            min-width: 60px;
             width: auto;
             transition: all 0.2s ease;
             background: transparent;
             border-radius: 0;
-            padding-left: 0.25rem;
-            padding-right: 0;
-            text-align: center;
+            padding: 0 0.25rem;
+            max-width: 100%;
         }
-
+        
         #ward-search:focus {
             background: rgba(255, 237, 213, 0.3);
         }
 
         #ward-search.has-clear {
-            padding-right: 0.25rem;
+            padding-right: 1.5rem;
         }
 
         #clear-ward-search {
             transition: opacity 120ms ease, color 120ms ease;
-            position: static;
-            transform: none;
+            position: absolute;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
             background: #fff;
-            border-radius: 9999px;
+            border-radius: 50%;
             cursor: pointer;
             z-index: 10;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: 0.25rem;
-        }
-
-        /* --- LAYOUT HEIGHTS --- */
-        .dashboard-grid {
-            min-height: calc(100vh - 220px);
-        }
-
-        .map-panel {
-            min-height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .map-panel #map {
-            flex: 1;
-            height: 100%;
-            min-height: 555px;
-        }
-
-        .sidebar-panels {
-            min-height: 100%;
-        }
-
-        @media (max-width: 1024px) {
-            .dashboard-grid,
-            .map-panel,
-            .sidebar-panels {
-                min-height: auto;
-            }
-            .map-panel #map {
-                min-height: clamp(422px, 79.2vh, 686px);
-            }
-        }
-
-        /* --- GLOBAL / LEGEND / SCROLL --- */
-        body {
-            zoom: 0.9;
-            transform-origin: top center;
-        }
-
-        #map-legend {
-            margin-top: 0.5rem;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem; 
-            border: 1px solid #e5e7eb;
-            background-color: #f9fafb;
-            font-size: 0.8rem; 
-            line-height: 1.4;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            align-items: center;
-        }
-
-        #map-legend .legend-heading {
-            font-weight: 600;
-            color: #374151;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            font-size: 0.72rem;
-            margin-right: 0.5rem;
-        }
-
-        #map-legend .legend-items {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            flex: 1;
-            justify-content: center;
-        }
-
-        .legend-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.25rem;
-            min-width: 60px;
-            text-align: center;
-        }
-
-        .legend-square {
-            width: 36px;
-            height: 10px;
-            border-radius: 999px;
-            border: 1px solid rgba(0,0,0,0.06); 
-            flex-shrink: 0; 
         }
 
         #ward-suggestions::-webkit-scrollbar {
@@ -175,47 +70,105 @@
             border-radius: 3px;
         }
 
-        @media (max-width: 768px) {
-            body {
-                zoom: 1;
-            }
-            #map {
-                height: 350px;
-            }
+        .ward-search-wrapper {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            max-width: 100%;
+            gap: 0.25rem;
         }
 
         @media (max-width: 640px) {
-            #ward-search {
-                width: 100% !important;
-                text-align: center;
-            }
             .ward-search-wrapper {
                 display: block;
                 width: 100%;
             }
+            #ward-search {
+                width: 100% !important;
+            }
+        }
+
+        /* --- GLOBAL & LEGEND --- */
+        html, body {
+            min-height: 100vh;
+        }
+
+        @media (max-width: 768px) {
+            #map { height: 350px; }
+        }
+
+        #map-legend {
+            margin-top: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem; 
+            border: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+            font-size: 0.8rem; 
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        
+        #map-legend .legend-heading {
+            font-weight: 600;
+            color: #374151;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            margin-right: 0.5rem;
+        }
+
+        .legend-square {
+            width: 36px;
+            height: 8px;
+            border-radius: 99px;
+            margin-bottom: 2px;
+        }
+
+        .app-shell {
+            min-height: 100vh;
+        }
+
+        @media (min-width: 769px) {
+            .app-shell {
+                height: 100vh;
+                overflow: hidden;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-shell {
+                height: auto !important;
+                overflow: auto !important;
+            }
+            .app-scroll {
+                overflow: visible !important;
+                min-height: auto !important;
+                height: auto !important;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 leading-relaxed min-h-screen">
+<body class="bg-gray-100 font-sans text-gray-800 leading-relaxed min-h-screen flex flex-col app-shell">
 
-    <div class="w-full space-y-4 px-0 py-4">
+    <div class="w-full flex-1 flex flex-col space-y-4 px-2 md:px-4 py-4 overflow-hidden min-h-0 app-scroll">
         
-        <main class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible">
+        <main class="bg-white rounded-2xl shadow-sm border border-gray-200 shrink-0">
             
             <div id="message-area" class="text-center text-gray-500 text-sm hidden py-2 bg-gray-50"></div>
 
             <div id="results-state" class="transition-all duration-300">
                 
-                <div class="px-6 pb-8 md:px-10">
-                    <div class="grid grid-cols-1 md:grid-cols-[70%_30%] gap-4 md:gap-6 items-start">
+                <div class="px-6 pt-8 pb-8 md:px-10">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                         
-                        <div class="space-y-2 self-end">
+                        <div class="flex-1 space-y-2">
                             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight">
-                                Năm 2024, ô nhiễm không khí tại 
+                                Hít thở không khí ô nhiễm tại 
                                 <span class="ward-search-wrapper relative inline-block group align-baseline text-orange-600">
                                     <input id="ward-search" type="text" 
                                         class="border-b-4 border-orange-400/50 focus:border-orange-500 font-extrabold placeholder-orange-300/70 focus:outline-none" 
-                                        placeholder="tìm phường/xã" autocomplete="off" />
+                                        placeholder="phường/xã" autocomplete="off" />
                                     
                                     <button id="clear-ward-search" type="button" 
                                         class="text-gray-400 hover:text-orange-500 hidden p-0.5 shadow-sm"
@@ -227,23 +180,26 @@
                                     
                                     <div id="ward-suggestions" class="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto hidden z-50 text-left text-base font-normal"></div>
                                 </span>
+                                <br class="hidden md:block" />
                                 tương đương hút
                             </h1>
+                            <div id="population-info-desktop" class="hidden md:block">
+                                <p id="population-info" class="text-sm text-gray-500 font-medium"></p>
+                            </div>
                         </div>
 
-                        <div class="flex items-baseline justify-start md:justify-end gap-2 self-end">
-                            <span id="cigarette-count" class="text-5xl md:text-6xl font-black text-orange-500 tracking-tight leading-none">...</span>
-                            <span class="text-xl md:text-2xl font-bold text-orange-500">điếu thuốc</span>
-                        </div>
-
-                        <p id="population-info" class="text-sm text-gray-500 font-medium">Khoảng ... người chịu ảnh hưởng</p>
-
-                        <div class="justify-self-start md:justify-self-end">
+                        <div class="flex flex-col items-start md:items-end gap-3">
+                            <div class="flex items-baseline gap-2">
+                                <span id="cigarette-count" class="text-5xl md:text-6xl font-black text-orange-500 tracking-tight leading-none">...</span>
+                                <span class="text-xl md:text-2xl font-bold text-orange-500">điếu thuốc</span>
+                            </div>
+                            
                             <div class="inline-flex bg-gray-100 p-1 rounded-lg">
                                 <button type="button" class="mode-btn px-4 py-1.5 rounded-md text-sm font-bold transition-all duration-200" data-mode="daily">mỗi ngày</button>
                                 <button type="button" class="mode-btn px-4 py-1.5 rounded-md text-sm font-bold transition-all duration-200" data-mode="weekly">mỗi tuần</button>
                                 <button type="button" class="mode-btn px-4 py-1.5 rounded-md text-sm font-bold transition-all duration-200" data-mode="monthly">mỗi tháng</button>
                             </div>
+                            <div id="population-info-mobile" class="w-full md:hidden text-left text-gray-500 text-sm font-medium pt-1"></div>
                         </div>
 
                     </div>
@@ -251,94 +207,93 @@
             </div>
         </main>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 dashboard-grid">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden min-h-0 app-scroll">
             
-            <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-xl shadow-sm lg:col-span-2 map-panel">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold text-gray-800">Bản đồ chất lượng không khí năm 2024</h3>
+            <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-2xl shadow-sm lg:col-span-2 border border-gray-200 flex flex-col h-full overflow-hidden min-h-0 app-scroll">
+                <div class="flex justify-between items-center mb-3 px-1">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        Bản đồ chất lượng không khí trung bình năm 2024
+                    </h3>
                 </div>
-                <div id="map"></div>
-                <div id="map-legend" class="text-gray-700"></div>
+                <div id="map" class="flex-1 min-h-[240px]"></div>
+                <div id="map-legend"></div>
             </section>
 
-            <div class="flex flex-col gap-3 h-full sidebar-panels">
-                <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-xl shadow-sm flex flex-col flex-1 h-full">
-                    <h3 id="ranking-title" class="text-lg font-bold text-gray-800">Xếp hạng nhanh</h3>
-                    <div id="ranking-panel-body" class="flex-1 relative">
-                        <div id="ranking-quick-view" class="space-y-3 absolute inset-0 overflow-y-auto pr-1">
-                            <div class="pt-2">
+            <div class="flex flex-col gap-4 h-full overflow-hidden min-h-0">
+                <section class="bg-white px-4 py-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col flex-1 h-full overflow-hidden min-h-0 app-scroll">
+                    <h3 id="ranking-title" class="text-lg font-bold text-gray-800 mb-3">Xếp hạng nhanh</h3>
+                    
+                    <div id="ranking-panel-body" class="flex-1 relative min-h-[360px] overflow-hidden">
+                        <div id="ranking-quick-view" class="absolute inset-0 overflow-y-auto pr-1 space-y-4">
+                            <div>
                                 <div class="flex items-center gap-2 mb-2">
-                                    <span class="w-2 h-6 bg-red-500 rounded-sm"></span>
-                                    <h4 class="text-base font-semibold text-gray-700">Tệ nhất (AQI cao)</h4>
+                                    <span class="w-1.5 h-5 bg-red-500 rounded-full"></span>
+                                    <h4 class="text-sm font-bold text-gray-600 uppercase tracking-wide">Tệ nhất</h4>
                                 </div>
-                                <ol id="top-worst-list" class="list-decimal list-inside space-y-1.5 text-base text-gray-700 font-medium bg-gray-50 p-3 rounded-lg"></ol>
+                                <ol id="top-worst-list" class="list-decimal list-inside space-y-2 text-sm text-gray-700 font-medium bg-red-50/50 p-3 rounded-lg border border-red-100"></ol>
                             </div>
                             <div>
                                 <div class="flex items-center gap-2 mb-2">
-                                    <span class="w-2 h-6 bg-green-500 rounded-sm"></span>
-                                    <h4 class="text-base font-semibold text-gray-700">Tốt nhất (AQI thấp)</h4>
+                                    <span class="w-1.5 h-5 bg-green-500 rounded-full"></span>
+                                    <h4 class="text-sm font-bold text-gray-600 uppercase tracking-wide">Tốt nhất</h4>
                                 </div>
-                                <ol id="top-best-list" class="list-decimal list-inside space-y-1.5 text-base text-gray-700 font-medium bg-gray-50 p-3 rounded-lg"></ol>
+                                <ol id="top-best-list" class="list-decimal list-inside space-y-2 text-sm text-gray-700 font-medium bg-green-50/50 p-3 rounded-lg border border-green-100"></ol>
                             </div>
                         </div>
 
-                        <div id="full-table-container" class="hidden absolute inset-0 flex flex-col gap-3">
-                            <input id="ranking-search" type="search" placeholder="Tìm tên phường/xã" class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
+                        <div id="full-table-container" class="hidden absolute inset-0 flex flex-col gap-3 bg-white z-10">
+                            <input id="ranking-search" type="search" placeholder="Tìm tên phường/xã..." 
+                                class="w-full px-4 py-2 text-sm border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-shadow" />
 
-                            <div class="flex-1 overflow-hidden border rounded-lg border-gray-200">
-                                <div class="h-full overflow-auto">
-                                    <table id="ranking-table" class="w-full divide-y divide-gray-200 text-sm">
-                                        <thead class="bg-gray-50 text-gray-600 uppercase tracking-wide text-xs font-semibold">
+                            <div class="flex-1 overflow-hidden border border-gray-100 rounded-lg">
+                                <div class="h-full overflow-auto custom-scrollbar">
+                                    <table id="ranking-table" class="w-full divide-y divide-gray-100 text-sm">
+                                        <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] font-semibold sticky top-0">
                                             <tr>
-                                                <th class="px-4 py-3 text-left">
-                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="rank">
-                                                        # <span class="text-gray-400" data-sort-indicator="rank"></span>
+                                                <th class="px-3 py-2 text-left bg-gray-50">
+                                                    <button type="button" class="hover:text-orange-600 flex items-center gap-1" data-sort-key="name">
+                                                        Tên ĐVHC <span data-sort-indicator="name"></span>
                                                     </button>
                                                 </th>
-                                                <th class="px-4 py-3 text-left">
-                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="name">
-                                                        Phường/Xã <span class="text-gray-400" data-sort-indicator="name"></span>
+                                                <th class="px-3 py-2 text-left bg-gray-50">
+                                                    <button type="button" class="hover:text-orange-600 flex items-center gap-1" data-sort-key="aqi">
+                                                        AQI <span data-sort-indicator="aqi">▼</span>
                                                     </button>
                                                 </th>
-                                                <th class="px-4 py-3 text-left">
-                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="aqi">
-                                                        AQI <span class="text-gray-400" data-sort-indicator="aqi"></span>
+                                                <th class="px-3 py-2 text-left bg-gray-50">
+                                                    <button type="button" class="hover:text-orange-600 flex items-center gap-1" data-sort-key="pm25">
+                                                        PM2.5 (µg/m³) <span data-sort-indicator="pm25"></span>
                                                     </button>
                                                 </th>
-                                                <th class="px-4 py-3 text-left hidden md:table-cell">
-                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="pm25">
-                                                        PM2.5 <span class="text-gray-400" data-sort-indicator="pm25"></span>
-                                                    </button>
-                                                </th>
-                                                <th class="px-4 py-3 text-left hidden md:table-cell">
-                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="population">
-                                                        Dân số <span class="text-gray-400" data-sort-indicator="population"></span>
+                                                <th class="px-3 py-2 text-left bg-gray-50">
+                                                    <button type="button" class="hover:text-orange-600 flex items-center gap-1" data-sort-key="population">
+                                                        Dân số <span data-sort-indicator="population"></span>
                                                     </button>
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody id="ranking-table-body" class="divide-y divide-gray-200 text-gray-700 bg-white"></tbody>
+                                        <tbody id="ranking-table-body" class="divide-y divide-gray-50 text-gray-700 bg-white"></tbody>
                                     </table>
                                 </div>
                             </div>
-                            <div class="flex items-center justify-between text-sm text-gray-600">
-                                <div id="pagination-info"></div>
+                            <div class="flex items-center justify-between text-xs text-gray-500 pt-1">
+                                <div id="pagination-info">Trang 1</div>
                                 <div class="flex gap-2">
-                                    <button id="prev-page-btn" class="px-3 py-1.5 rounded border hover:bg-gray-100 disabled:opacity-50">Trước</button>
-                                    <button id="next-page-btn" class="px-3 py-1.5 rounded border hover:bg-gray-100 disabled:opacity-50">Sau</button>
+                                    <button id="prev-page-btn" class="px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-30">Trước</button>
+                                    <button id="next-page-btn" class="px-2 py-1 rounded border hover:bg-gray-50 disabled:opacity-30">Sau</button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <button id="toggle-table-btn" class="w-full mt-4 py-2 rounded-lg border border-orange-100 text-orange-600 text-sm font-semibold hover:bg-orange-50 transition-colors">
+                    <button id="toggle-table-btn" class="w-full mt-3 py-2.5 rounded-xl bg-gray-50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 text-sm font-bold transition-colors border border-gray-200 hover:border-orange-200">
                         Xem chi tiết tất cả
                     </button>
                 </section>
 
-                <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-xl shadow-sm border border-gray-100 text-[11px] text-gray-500 leading-relaxed space-y-2 mt-auto">
+                <section class="bg-white px-4 py-4 rounded-xl shadow-sm border border-gray-200 text-[11px] text-gray-400 leading-relaxed space-y-2">
                     <p>Dữ liệu chất lượng không khí trung bình năm theo phường, xã được tính toán bởi <a href="https://geoi.edu.vn/vi/" target="_blank" class="text-orange-500 hover:underline">nhóm nghiên cứu GEOI</a> (Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội).</p>
-                    <p>Quy đổi sang số điếu thuốc do VnExpress thực hiện, dựa trên nghiên cứu của <a href="http://berkeleyearth.org/archive/air-pollution-and-cigarette-equivalence/" target="_blank" class="text-orange-500 hover:underline">Berkeley Earth</a>. Trong đó, mỗi điếu thuốc một ngày tương đương khoảng 22 µg/m³ nồng độ PM2.5.</p>
+                    <p>Quy đổi sang số điếu thuốc do VnExpress thực hiện, dựa trên nghiên cứu của <a href="http://berkeleyearth.org/archive/air-pollution-and-cigarette-equivalence/" target="_blank" class="text-orange-400 hover:underline">Berkeley Earth</a>. Trong đó, mỗi điếu thuốc một ngày tương đương khoảng 22 µg/m³ nồng độ PM2.5.</p>
                     <p>Dữ liệu dân số và ranh giới phường xã từ NXB Tài nguyên - Môi trường và Bản đồ Việt Nam. Bản đồ nền của Google Satellite.</p>
                 </section>
             </div>
@@ -359,7 +314,7 @@
         const clearWardSearchBtn = document.getElementById('clear-ward-search');
         const messageArea = document.getElementById('message-area');
         const populationInfo = document.getElementById('population-info');
-        // Removed cityNameEl as we now use the input itself
+        const populationInfoMobile = document.getElementById('population-info-mobile');
         const topWorstList = document.getElementById('top-worst-list');
         const topBestList = document.getElementById('top-best-list');
         const toggleTableBtn = document.getElementById('toggle-table-btn');
@@ -378,29 +333,35 @@
         const sortButtons = Array.from(document.querySelectorAll('button[data-sort-key]'));
         const mapLegendContainer = document.getElementById('map-legend');
         const sortIndicators = new Map();
-        const localeCollator = new Intl.Collator('vi', { sensitivity: 'base' });
-        const POPULATION_PLACEHOLDER = 'Khoảng ... người chịu ảnh hưởng';
         let wardSearchSizer = null;
-        const MAX_VISIBLE_WARD_MATCHES = 2;
-        const MAP_PADDING_RATIO = 0.1;
-        const RANKING_HEIGHT_MULTIPLIER = 1.1;
-        const LOCATION_OPTION_HTML = `
-            <button type="button" data-location-option="true"
-                class="w-full flex items-center gap-2 px-4 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-50 border-b border-gray-100 transition-colors focus:outline-none bg-white">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                </svg>
-                Vị trí của tôi
-            </button>
-        `;
-        const EMPTY_SUGGESTION_HTML = '<div class="p-3 text-sm text-gray-500">Không tìm thấy kết quả</div>';
+        const MAX_VISIBLE_WARD_MATCHES = 5; // Increased for better UX
         let hanoiBounds = null;
+        const modeMultipliers = { daily: 1, weekly: 7, monthly: 30 };
+        let baseCigarettes = 0;
+        let currentMode = 'daily';
+        let rankingData = [];
+        let rankingByName = new Map();
+        let currentSort = 'aqi_desc';
+        const rowsPerPage = 9;
+        let currentPage = 1;
+        let isFullTableVisible = false;
         
         sortButtons.forEach(btn => {
             const key = btn.dataset.sortKey;
             const indicator = document.querySelector(`[data-sort-indicator="${key}"]`);
             if (key && indicator) sortIndicators.set(key, indicator);
+            btn.addEventListener('click', () => {
+                if (!key) return;
+                const [currentKey, currentDir] = currentSort.split('_');
+                const nextDir = currentKey === key && currentDir === 'desc' ? 'asc' : 'desc';
+                currentSort = `${key}_${nextDir}`;
+                currentPage = 1;
+                updateSortIndicators(key, nextDir);
+                refreshRankingTable();
+            });
         });
+        const [initialSortKey, initialSortDir] = currentSort.split('_');
+        updateSortIndicators(initialSortKey, initialSortDir);
 
         if (wardSearchInput) {
             wardSearchInput.disabled = true;
@@ -408,55 +369,37 @@
             resizeWardSearchInput();
         }
         
-        const modeMultipliers = { daily: 1, weekly: 7, monthly: 30 };
-        let baseCigarettes = 0;
-        let currentMode = 'daily';
-        let rankingData = [];
-        let currentSort = 'aqi_desc';
-        const rowsPerPage = 8;
-        let currentPage = 1;
-        let isFullTableVisible = false;
-        updateModeButtons();
-
         // --- HELPERS ---
         const formatDecimal = (value, fractionDigits = 1) => {
             if (!Number.isFinite(value)) return '—';
             return value.toFixed(fractionDigits).replace('.', ',');
         };
-
-        function debounce(fn, delay = 150) {
-            let timeoutId = null;
-            return (...args) => {
-                if (timeoutId) clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => {
-                    timeoutId = null;
-                    fn(...args);
-                }, delay);
-            };
-        }
         
         const aqiColorScale = [
-            { color: '#2ecc71', range: '0 - 50', label: 'Tốt' },
-            { color: '#f1c40f', range: '51 - 100', label: 'Trung bình' },
-            { color: '#f39c12', range: '101 - 150', label: 'Kém' },
-            { color: '#e74c3c', range: '151 - 200', label: 'Xấu' },
-            { color: '#8e44ad', range: '201 - 300', label: 'Rất xấu' },
+            { color: '#2ecc71', range: '0-50', label: 'Tốt' },
+            { color: '#f1c40f', range: '51-100', label: 'Trung bình' },
+            { color: '#f39c12', range: '101-150', label: 'Kém' },
+            { color: '#e74c3c', range: '151-200', label: 'Xấu' },
+            { color: '#8e44ad', range: '201-300', label: 'Rất xấu' },
             { color: '#5b2c6f', range: '300+', label: 'Nguy hại' }
         ];
 
         function renderMapLegend() {
             if (!mapLegendContainer) return;
-            const heading = '<div class="legend-heading">Chỉ số AQI</div>';
+            const heading = '<div class="legend-heading">AQI</div>';
             const items = aqiColorScale.map(item => `
-                <div class="legend-item text-gray-700 text-xs">
+                <div class="flex items-center gap-2 text-xs text-gray-600">
                     <div class="legend-square" style="background-color: ${item.color};"></div>
-                    <div>
-                        <span class="font-semibold">${item.range}</span><br/>
-                        <span class="text-gray-500">${item.label}</span>
-                    </div>
+                    <span class="font-bold">${item.label} (${item.range})</span>
                 </div>
             `).join('');
-            mapLegendContainer.innerHTML = heading + `<div class="legend-items">${items}</div>`;
+            mapLegendContainer.innerHTML = heading + items;
+        }
+
+        function updateSortIndicators(activeKey, direction) {
+            sortIndicators.forEach((indicator, key) => {
+                indicator.textContent = key === activeKey ? (direction === 'asc' ? '▲' : '▼') : '';
+            });
         }
 
         function getWardName(properties = {}) {
@@ -485,79 +428,34 @@
             return 0;
         }
 
-        function getNaturalHeight(element) {
-            if (!element) return 0;
-            const wasHidden = element.classList.contains('hidden');
-            if (!wasHidden) return element.scrollHeight;
-            
-            const prevDisplay = element.style.display;
-            const prevPosition = element.style.position;
-            const prevVisibility = element.style.visibility;
-            const prevPointerEvents = element.style.pointerEvents;
-            
-            element.classList.remove('hidden');
-            element.style.display = 'block';
-            element.style.position = 'absolute';
-            element.style.visibility = 'hidden';
-            element.style.pointerEvents = 'none';
-            
-            const height = element.scrollHeight;
-            
-            element.style.display = prevDisplay;
-            element.style.position = prevPosition;
-            element.style.visibility = prevVisibility;
-            element.style.pointerEvents = prevPointerEvents;
-            element.classList.add('hidden');
-            
-            return height;
-        }
-
-        function updateRankingPanelHeight() {
-            if (!rankingPanelBody) return;
-            const quickHeight = getNaturalHeight(rankingQuickView);
-            const tableHeight = getNaturalHeight(fullTableContainer);
-            let baseHeight = isFullTableVisible ? tableHeight : quickHeight;
-            if (baseHeight <= 0) baseHeight = Math.max(quickHeight, tableHeight);
-            rankingPanelBody.style.minHeight = baseHeight > 0 ? `${baseHeight}px` : '';
-        }
-
-        const scheduleRankingPanelHeightUpdate = (() => {
-            const raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : (cb) => setTimeout(cb, 16);
-            const caf = window.cancelAnimationFrame ? window.cancelAnimationFrame.bind(window) : clearTimeout;
-            let frame = null;
-            return () => {
-                if (frame) caf(frame);
-                frame = raf(() => {
-                    frame = null;
-                    updateRankingPanelHeight();
-                });
-            };
-        })();
-
         function setupWardSearchSizer() {
             if (!wardSearchInput || wardSearchSizer) return;
             wardSearchSizer = document.createElement('span');
             wardSearchSizer.className = 'absolute invisible whitespace-pre pointer-events-none';
-            wardSearchSizer.style.position = 'absolute';
-            wardSearchSizer.style.visibility = 'hidden';
-            wardSearchSizer.style.whiteSpace = 'pre';
             const computed = window.getComputedStyle(wardSearchInput);
             wardSearchSizer.style.font = computed.font;
-            document.body.appendChild(wardSearchSizer);
+            document.body.appendChild(wardSearchSizer); // Append to body to ensure width calc works
         }
 
         function resizeWardSearchInput() {
             if (!wardSearchInput) return;
             if (!wardSearchSizer) setupWardSearchSizer();
-            if (!wardSearchSizer) return;
+            
+            if (window.innerWidth <= 640) {
+                wardSearchInput.style.width = '100%';
+                updateClearButtonVisibility();
+                return;
+            }
+
             const placeholder = wardSearchInput.getAttribute('placeholder') || '';
             const text = wardSearchInput.value || '';
-            const displayText = text || placeholder;
-            wardSearchSizer.innerText = displayText.replace(/\s/g, '\u00a0');
-            const extraPadding = wardSearchInput.classList.contains('has-clear') ? 70 : 24;
-            const width = Math.min(Math.max(wardSearchSizer.offsetWidth + extraPadding, 140), 520);
-            wardSearchInput.style.width = `${width}px`;
-            if (wardSuggestions) wardSuggestions.style.minWidth = `${Math.max(width, 140) + 24}px`;
+            
+            wardSearchSizer.innerText = (text.length > placeholder.length ? text : placeholder).replace(/\s/g, '\u00a0');
+            
+            // Add some buffer for cursor and aesthetic
+            const newWidth = Math.min(Math.max(wardSearchSizer.offsetWidth + 30, 30), 400);
+            wardSearchInput.style.width = `${newWidth}px`;
+            
             updateClearButtonVisibility();
         }
 
@@ -586,6 +484,7 @@
             const multiplier = modeMultipliers[currentMode] ?? 1;
             const value = baseCigarettes * multiplier;
             if (cigaretteCountEl) {
+                // Animate number counting if needed, for now just set
                 cigaretteCountEl.innerText = formatDecimal(value, 1);
             }
         }
@@ -593,6 +492,7 @@
         function setBaseCigarettes(value) {
             baseCigarettes = value;
             updateCigaretteDisplay();
+            updateModeButtons();
         }
 
         function setMode(mode) {
@@ -616,29 +516,10 @@
             return {
                 color: '#ffffff',
                 weight: 1,
-                opacity: 0.8,
+                opacity: 0.4,
                 fillColor: getHeatmapColor(aqi),
-                fillOpacity: 0.6
+                fillOpacity: 0.7
             };
-        }
-
-        function getTooltipContent(feature = {}) {
-            const name = getWardName(feature.properties || {});
-            const aqi = getWardAqi(feature.properties || {});
-            return `<div class="font-semibold text-sm">${name}</div><div class="text-xs">AQI: ${formatDecimal(aqi, 0)}</div>`;
-        }
-
-        function updateLayerTooltip(layer) {
-            if (!layer || !layer.feature) return;
-            if (window.innerWidth < 640) {
-                if (layer.closeTooltip) layer.closeTooltip();
-                if (layer.unbindTooltip) layer.unbindTooltip();
-                return;
-            }
-            const content = getTooltipContent(layer.feature);
-            if (layer.bindTooltip) {
-                layer.bindTooltip(content, { sticky: true, direction: 'auto', className: 'bg-white px-2 py-1 shadow rounded border border-gray-200' });
-            }
         }
 
         function pm25ToCigarettes(pm25) {
@@ -649,12 +530,12 @@
         // --- MAIN INITIALIZATION ---
         async function initializeMapAndData() {
             try {
+                // Simulate loading or fetch real data
                 const response = await fetch('./HanoiAQ.geojson');
                 if (!response.ok) throw new Error(`Không thể tải dữ liệu.`);
                 
                 wardData = await response.json();
                 buildFeatureLookups(wardData);
-                layerByName = new Map();
 
                 const mapCenter = [21.0285, 105.8542];
                 map = L.map('map', {
@@ -665,7 +546,7 @@
                 
                 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-                L.tileLayer('https://mt.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                L.tileLayer('https://mt.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
                     maxZoom: 18, minZoom: 9
                 }).addTo(map);
 
@@ -678,30 +559,28 @@
                             const name = getWardName(feature.properties);
                             const idx = getFeatureIndexByName(name);
                             if (idx >= 0) selectWardByIndex(idx, { fitBounds: false, layer });
-                            if (activeTooltipLayer && activeTooltipLayer !== layer) {
-                                closeActiveTooltip();
+                        });
+                        layer.on('mouseover', () => {
+                            layer.setStyle({ weight: 2, color: '#333', opacity: 1 });
+                        });
+                        layer.on('mouseout', () => {
+                            if (layer !== lastHighlightedLayer) {
+                                geoJsonLayer.resetStyle(layer);
                             }
-                            if (layer.openTooltip) layer.openTooltip();
-                            activeTooltipLayer = layer;
                         });
                         const layerName = getWardName(feature.properties);
                         if (layerName) layerByName.set(layerName, layer);
-                        updateLayerTooltip(layer);
+                        
+                        const tooltipContent = `<div class="font-bold text-gray-800">${getWardName(feature.properties)}</div>
+                                                <div class="text-xs">AQI: ${formatDecimal(getWardAqi(feature.properties), 0)}</div>`;
+                        layer.bindTooltip(tooltipContent, { sticky: true, className: 'px-2 py-1 bg-white border border-gray-200 rounded shadow-sm text-xs' });
                     }
                 }).addTo(map);
 
-                hanoiBounds = geoJsonLayer.getBounds().pad(MAP_PADDING_RATIO);
+                hanoiBounds = geoJsonLayer.getBounds().pad(0.1);
                 map.setMaxBounds(hanoiBounds);
                 map.fitBounds(hanoiBounds);
-                map.on('dragstart', closeActiveTooltip);
-                map.on('zoomstart', closeActiveTooltip);
-                map.on('drag', () => {
-                    if (!hanoiBounds) return;
-                    const center = map.getCenter();
-                    if (!hanoiBounds.contains(center)) {
-                        map.panInsideBounds(hanoiBounds, { animate: false });
-                    }
-                });
+                
                 populateRanking(wardData);
             } catch (error) {
                 console.error(error);
@@ -711,16 +590,17 @@
 
         // --- UI UPDATES ---
         let lastHighlightedLayer = null;
-        let activeTooltipLayer = null;
+        
         function highlightLayer(layer) {
             if (lastHighlightedLayer && geoJsonLayer) {
                 geoJsonLayer.resetStyle(lastHighlightedLayer);
-                lastHighlightedLayer = null;
             }
             if (layer) {
-                layer.setStyle({ color: '#e85d04', weight: 3, fillOpacity: 0.7 });
+                layer.setStyle({ color: '#e85d04', weight: 3, opacity: 1, fillOpacity: 0.8 });
                 layer.bringToFront();
                 lastHighlightedLayer = layer;
+            } else {
+                lastHighlightedLayer = null;
             }
         }
 
@@ -733,20 +613,13 @@
             if (wardSuggestions) wardSuggestions.classList.add('hidden');
             updateClearButtonVisibility();
             highlightLayer(null);
-            closeActiveTooltip();
             if (map && hanoiBounds) {
                 map.fitBounds(hanoiBounds, { animate: true });
             }
             baseCigarettes = 0;
             if (cigaretteCountEl) cigaretteCountEl.innerText = '...';
-            if (populationInfo) populationInfo.innerText = POPULATION_PLACEHOLDER;
-        }
-
-        function closeActiveTooltip() {
-            if (activeTooltipLayer && activeTooltipLayer.closeTooltip) {
-                activeTooltipLayer.closeTooltip();
-            }
-            activeTooltipLayer = null;
+            if (populationInfo) populationInfo.innerText = '';
+            if (populationInfoMobile) populationInfoMobile.innerText = '';
         }
 
         function buildFeatureLookups(data) {
@@ -768,48 +641,49 @@
             wardSearchInput.disabled = false;
             resizeWardSearchInput();
             updateClearButtonVisibility();
-            // Allow focus to auto-select text for easy replacement
+            
             wardSearchInput.addEventListener('focus', function() {
                 this.select();
                 updateWardSuggestions(this.value);
-                resizeWardSearchInput();
             });
         }
 
         function getFeatureIndexByName(name = '') {
             if (!name) return -1;
-            const normalized = name.trim().toLowerCase();
-            return featureIndexByName.get(normalized) ?? -1;
+            return featureIndexByName.has(name.trim().toLowerCase()) ? featureIndexByName.get(name.trim().toLowerCase()) : -1;
         }
 
         function updateWardSuggestions(query = '') {
             if (!wardSuggestions) return;
             const trimmed = (query || '').trim().toLowerCase();
-            const matches = [];
-            if (trimmed) {
-                for (const item of suggestionSource) {
-                    if (item.normalized.includes(trimmed)) {
-                        matches.push(item);
-                    }
-                    if (matches.length >= MAX_VISIBLE_WARD_MATCHES) break;
-                }
+            const matches = (trimmed 
+                ? suggestionSource.filter(s => s.normalized.includes(trimmed)) 
+                : suggestionSource
+            ).slice(0, MAX_VISIBLE_WARD_MATCHES);
+
+            let suggestionsHtml = '';
+            if (matches.length === 0) {
+                suggestionsHtml = '<div class="p-3 text-sm text-gray-500 italic">Không tìm thấy kết quả</div>';
             } else {
-                matches.push(...suggestionSource.slice(0, MAX_VISIBLE_WARD_MATCHES));
-            }
-            const suggestionsHtml = matches.length
-                ? matches.map(item => `
-                    <div class="px-4 py-2 hover:bg-orange-50 cursor-pointer text-sm text-gray-700 border-b last:border-0 border-gray-100 transition-colors" 
+                suggestionsHtml = matches.map(item => `
+                    <div class="px-4 py-2.5 hover:bg-orange-50 cursor-pointer text-sm text-gray-700 border-b last:border-0 border-gray-50 transition-colors font-medium" 
                         data-index="${item.index}">
                         ${item.name}
                     </div>
-                `).join('')
-                : EMPTY_SUGGESTION_HTML;
-
-            wardSuggestions.innerHTML = LOCATION_OPTION_HTML + suggestionsHtml;
-            if (wardSearchInput) {
-                const width = wardSearchInput.offsetWidth || 0;
-                wardSuggestions.style.minWidth = `${Math.max(width, 120) + 24}px`;
+                `).join('');
             }
+            
+            const locationOption = `
+                <button type="button" data-location-option="true"
+                    class="w-full flex items-center gap-2 px-4 py-3 text-sm font-bold text-orange-600 hover:bg-orange-50 border-b border-gray-100 transition-colors focus:outline-none bg-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                    </svg>
+                    Vị trí của tôi
+                </button>
+            `;
+
+            wardSuggestions.innerHTML = locationOption + suggestionsHtml;
             wardSuggestions.classList.remove('hidden');
         }
 
@@ -817,141 +691,118 @@
             if (!wardData || index < 0 || index >= wardData.features.length) return;
             const feature = wardData.features[index];
             const name = getWardName(feature.properties);
-            const {
-                layer,
-                fitBounds = true,
-                updateInput = true
-            } = options;
+            const { layer, fitBounds = true } = options;
             
-            updateUI(feature.properties, updateInput);
+            updateUI(feature.properties);
             
-            if (wardSuggestions) wardSuggestions.classList.add('hidden');
-            if (wardSearchInput && updateInput) {
-                wardSearchInput.blur(); // Unfocus to dismiss keyboard/cursor
+            if (wardSearchInput) {
+                wardSearchInput.value = name;
+                resizeWardSearchInput();
+                wardSearchInput.blur();
+                updateClearButtonVisibility();
             }
+            if (wardSuggestions) wardSuggestions.classList.add('hidden');
 
             const targetLayer = layer || layerByName.get(name);
             if (targetLayer) {
                 if (fitBounds && map) {
-                    const bounds = targetLayer.getBounds();
-                    const mapSize = map.getSize();
-                    const paddingX = mapSize.x * MAP_PADDING_RATIO;
-                    const paddingY = mapSize.y * MAP_PADDING_RATIO;
-                    map.fitBounds(bounds, { padding: [paddingY, paddingX] });
+                    map.fitBounds(targetLayer.getBounds(), { padding: [50, 50] });
                 }
                 highlightLayer(targetLayer);
             }
         }
 
-        function updateUI(properties, syncInput = true) {
+        function updateUI(properties) {
             const pm25 = getWardPm25(properties);
-            const name = getWardName(properties);
             const population = getWardPopulation(properties);
             const cigs = pm25ToCigarettes(pm25);
 
-            // Keep the input text in sync with the selected ward (map clicks or search results).
-            if (wardSearchInput && syncInput) {
-                if (wardSearchInput.value !== name) {
-                    wardSearchInput.value = name;
-                }
-                resizeWardSearchInput();
-                updateClearButtonVisibility();
-            }
-
             setBaseCigarettes(cigs);
 
-            if (populationInfo) {
-                populationInfo.innerText = population > 0
-                    ? `Khoảng ${Math.round(population).toLocaleString('vi-VN')} người chịu ảnh hưởng.`
-                    : POPULATION_PLACEHOLDER;
-            }
-            if (resultsState) resultsState.classList.remove('hidden');
+            const populationText = population > 0
+                ? `Ảnh hưởng đến ${Math.round(population).toLocaleString('vi-VN')} người dân.`
+                : '';
+            if (populationInfo) populationInfo.innerText = populationText;
+            if (populationInfoMobile) populationInfoMobile.innerText = populationText;
         }
 
-        // --- RANKING & TABLE ---
+        // --- RANKING & TABLE LOGIC ---
         function populateRanking(data) {
             if (!data || !data.features) return;
-            rankingData = data.features.map((f, i) => ({
+            rankingData = data.features.map((f) => ({
                 name: getWardName(f.properties),
                 aqi: getWardAqi(f.properties),
                 pm25: getWardPm25(f.properties),
-                population: getWardPopulation(f.properties),
-                rankWorst: 0
-            })).filter(e => e.name).sort((a, b) => b.aqi - a.aqi);
+                population: getWardPopulation(f.properties)
+            })).filter(e => e.name && e.aqi > 0).sort((a, b) => b.aqi - a.aqi);
 
-            rankingData.forEach((e, i) => {
-                e.rankWorst = i + 1;
-            });
+            rankingData.forEach((e, i) => e.rank = i + 1);
 
+            // Populate Quick Views
             if (topWorstList) {
-                topWorstList.innerHTML = rankingData.slice(0, 5).map(e => `<li><span class="font-bold">${e.name}</span>: AQI ${formatDecimal(e.aqi, 0)}</li>`).join('');
+                topWorstList.innerHTML = rankingData.slice(0, 5).map(e => 
+                    `<li class="flex justify-between"><span>${e.name}</span> <span class="font-bold text-red-600">${Math.round(e.aqi)}</span></li>`
+                ).join('');
             }
             if (topBestList) {
-                topBestList.innerHTML = rankingData.slice(-5).reverse().map(e => `<li><span class="font-bold">${e.name}</span>: AQI ${formatDecimal(e.aqi, 0)}</li>`).join('');
+                const best = [...rankingData].reverse().slice(0, 5);
+                topBestList.innerHTML = best.map(e => 
+                    `<li class="flex justify-between"><span>${e.name}</span> <span class="font-bold text-green-600">${Math.round(e.aqi)}</span></li>`
+                ).join('');
             }
             
             refreshRankingTable();
-            scheduleRankingPanelHeightUpdate();
         }
 
         function refreshRankingTable() {
             if (!rankingTableBody) return;
+            let rows = [...rankingData];
+            
             const search = rankingSearch ? rankingSearch.value.trim().toLowerCase() : '';
-            const rows = search
-                ? rankingData.filter(r => r.name.toLowerCase().includes(search))
-                : [...rankingData];
+            if (search) rows = rows.filter(r => r.name.toLowerCase().includes(search));
 
             const [key, dir] = currentSort.split('_');
             rows.sort((a, b) => {
-                let valA = a[key];
-                let valB = b[key];
-                if (key === 'rank') {
-                    valA = a.rankWorst;
-                    valB = b.rankWorst;
+                let valA = a[key], valB = b[key];
+                if (typeof valA === 'string' || typeof valB === 'string') {
+                    const strA = (valA || '').toString();
+                    const strB = (valB || '').toString();
+                    return dir === 'asc' ? strA.localeCompare(strB, 'vi') : strB.localeCompare(strA, 'vi');
                 }
-                const bothStrings = typeof valA === 'string' || typeof valB === 'string';
-                if (bothStrings) {
-                    const aStr = (valA ?? '').toString();
-                    const bStr = (valB ?? '').toString();
-                    return dir === 'asc'
-                        ? localeCollator.compare(aStr, bStr)
-                        : localeCollator.compare(bStr, aStr);
-                }
-                valA = Number(valA) || 0;
-                valB = Number(valB) || 0;
-                return dir === 'asc' ? valA - valB : valB - valA;
+                const numA = Number.isFinite(valA) ? valA : 0;
+                const numB = Number.isFinite(valB) ? valB : 0;
+                return dir === 'asc' ? numA - numB : numB - numA;
             });
 
             const totalPages = Math.ceil(rows.length / rowsPerPage) || 1;
             if (currentPage > totalPages) currentPage = totalPages;
-            const start = (currentPage - 1) * rowsPerPage;
-            const pageRows = rows.slice(start, start + rowsPerPage);
+            if (currentPage < 1) currentPage = 1;
 
-            rankingTableBody.innerHTML = pageRows.map(e => `
-                <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="px-4 py-3 text-gray-500">#${e.rankWorst}</td>
-                    <td class="px-4 py-3 font-medium text-gray-900">${e.name}</td>
-                    <td class="px-4 py-3">
-                        <span class="px-2 py-1 rounded text-xs font-bold" style="background-color:${getHeatmapColor(e.aqi)}; color:white;">
+            const start = (currentPage - 1) * rowsPerPage;
+            const displayRows = rows.slice(start, start + rowsPerPage);
+            
+            rankingTableBody.innerHTML = displayRows.map(e => `
+                <tr class="hover:bg-orange-50 transition-colors">
+                    <td class="px-3 py-2 font-semibold text-gray-900">${e.name}</td>
+                    <td class="px-3 py-2">
+                        <span class="px-2 py-0.5 rounded text-xs font-bold text-white" style="background-color:${getHeatmapColor(e.aqi)}">
                             ${formatDecimal(e.aqi, 0)}
                         </span>
                     </td>
-                    <td class="px-4 py-3 text-gray-600 hidden md:table-cell">${formatDecimal(e.pm25, 1)}</td>
-                    <td class="px-4 py-3 text-gray-600 hidden md:table-cell">${e.population ? e.population.toLocaleString('vi-VN') : '-'}</td>
+                    <td class="px-3 py-2 text-gray-700 text-sm">${formatDecimal(e.pm25, 1)}</td>
+                    <td class="px-3 py-2 text-gray-500 text-sm">${e.population ? e.population.toLocaleString('vi-VN') : '-'}</td>
                 </tr>
             `).join('');
 
             if (paginationInfo) paginationInfo.innerText = `Trang ${currentPage}/${totalPages}`;
             if (prevPageBtn) prevPageBtn.disabled = currentPage <= 1;
             if (nextPageBtn) nextPageBtn.disabled = currentPage >= totalPages;
-            scheduleRankingPanelHeightUpdate();
         }
 
-        // --- EVENT LISTENERS ---
+        // --- EVENTS ---
         modeButtons.forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
         
         if (wardSearchInput) {
-            // Trigger on input and focus
             wardSearchInput.addEventListener('input', (e) => {
                 resizeWardSearchInput();
                 updateWardSuggestions(e.target.value);
@@ -966,11 +817,7 @@
         }
 
         if (wardSuggestions) {
-            // Prevent blurring when clicking suggestions
-            wardSuggestions.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-            });
-            
+            wardSuggestions.addEventListener('mousedown', (e) => e.preventDefault());
             wardSuggestions.addEventListener('click', (e) => {
                 const locationOption = e.target.closest('[data-location-option="true"]');
                 if (locationOption) {
@@ -982,7 +829,6 @@
             });
         }
         
-        // Hide suggestions when clicking outside
         document.addEventListener('click', (e) => {
             if (wardSearchInput && !wardSearchInput.contains(e.target) && 
                 wardSuggestions && !wardSuggestions.contains(e.target)) {
@@ -990,74 +836,50 @@
             }
         });
 
-        function setFullTableVisibility(show) {
-            if (!fullTableContainer || !rankingQuickView || !toggleTableBtn) return;
-            isFullTableVisible = !!show;
-            fullTableContainer.classList.toggle('hidden', !isFullTableVisible);
-            rankingQuickView.classList.toggle('hidden', isFullTableVisible);
-            toggleTableBtn.textContent = isFullTableVisible ? 'Quay lại xếp hạng nhanh' : 'Xem chi tiết tất cả';
-            if (rankingTitle) {
-                rankingTitle.textContent = isFullTableVisible ? 'Xếp hạng chi tiết' : 'Xếp hạng nhanh';
-            }
-            if (isFullTableVisible) {
-                fullTableContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-            scheduleRankingPanelHeightUpdate();
-        }
-
         if (toggleTableBtn && fullTableContainer && rankingQuickView) {
-            toggleTableBtn.addEventListener('click', () => setFullTableVisibility(!isFullTableVisible));
+            toggleTableBtn.addEventListener('click', () => {
+                isFullTableVisible = !isFullTableVisible;
+                fullTableContainer.classList.toggle('hidden', !isFullTableVisible);
+                rankingQuickView.classList.toggle('hidden', isFullTableVisible);
+                toggleTableBtn.textContent = isFullTableVisible ? 'Quay lại xếp hạng nhanh' : 'Xem chi tiết tất cả';
+                if (rankingTitle) rankingTitle.textContent = isFullTableVisible ? 'Bảng xếp hạng chi tiết' : 'Xếp hạng nhanh';
+            });
         }
 
         if (prevPageBtn) prevPageBtn.addEventListener('click', () => { currentPage--; refreshRankingTable(); });
         if (nextPageBtn) nextPageBtn.addEventListener('click', () => { currentPage++; refreshRankingTable(); });
-        const debouncedRankingSearch = debounce(() => { currentPage = 1; refreshRankingTable(); }, 180);
-        if (rankingSearch) rankingSearch.addEventListener('input', debouncedRankingSearch);
-
-        sortButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const key = btn.dataset.sortKey;
-                const [currKey, currDir] = currentSort.split('_');
-                const newDir = (currKey === key && currDir === 'desc') ? 'asc' : 'desc';
-                currentSort = `${key}_${newDir}`;
-                
-                sortIndicators.forEach(el => el.innerText = '');
-                const indicator = sortIndicators.get(key);
-                if (indicator) indicator.innerText = newDir === 'asc' ? '▲' : '▼';
-                
-                currentPage = 1;
-                refreshRankingTable();
-            });
-        });
+        if (rankingSearch) rankingSearch.addEventListener('input', () => { currentPage = 1; refreshRankingTable(); });
 
         function onLocationClick() {
             if (!navigator.geolocation) return showMessage("Trình duyệt không hỗ trợ vị trí.", 'error');
             showMessage("Đang tìm vị trí...", 'info');
             navigator.geolocation.getCurrentPosition(pos => {
                 const userPoint = turf.point([pos.coords.longitude, pos.coords.latitude]);
-                let found = null, foundLayer = null;
+                let found = null;
                 geoJsonLayer.eachLayer(layer => {
                     if (!found && turf.booleanPointInPolygon(userPoint, layer.feature.geometry)) {
-                        found = layer.feature; foundLayer = layer;
+                        found = layer;
                     }
                 });
                 if (found) {
-                    const idx = getFeatureIndexByName(getWardName(found.properties));
-                    selectWardByIndex(idx, { layer: foundLayer });
+                    const idx = getFeatureIndexByName(getWardName(found.feature.properties));
+                    selectWardByIndex(idx, { layer: found });
                 } else {
-                    showMessage("Bạn đang ở ngoài khu vực bản đồ.", 'warn');
+                    showMessage("Bạn đang ở ngoài khu vực dữ liệu.", 'warn');
                 }
             }, () => showMessage("Không thể truy cập vị trí.", 'error'));
         }
 
         function showMessage(msg, type) {
             messageArea.innerText = msg;
-            messageArea.className = `text-center text-sm py-2 bg-gray-50 ${!msg ? 'hidden' : ''} ${type === 'error' ? 'text-red-500' : 'text-gray-500'}`;
+            messageArea.classList.remove('hidden');
+            setTimeout(() => messageArea.classList.add('hidden'), 3000);
         }
 
         window.onload = () => {
             renderMapLegend();
             initializeMapAndData();
+            updateModeButtons(); // Init buttons
         };
     </script>
 </body>
