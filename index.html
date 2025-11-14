@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chất lượng không khí trung bình năm 2024 tại Hà Nội</title>
+    <title>Chất lượng không khí Hà Nội (Trung bình 2024)</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -17,226 +17,356 @@
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
     <style>
-        /* Chiều cao bản đồ linh hoạt theo kích thước màn hình */
+        body {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .hero-title {
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+
+        #results-state > div {
+            padding: 20px 40px !important;
+        }
+
+        /* --- MAP & HERO STYLES --- */
         #map {
-            height: clamp(280px, 55vh, 520px);
-            border-radius: 0.75rem; /* góc bo mềm mại hơn */
+            height: clamp(363px, 72.6vh, 726px);
+            border-radius: 0.75rem;
+            width: 100%;
+            z-index: 1;
         }
-        
-        /* Simple loading spinner */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+
+        .ward-search-wrapper {
+            position: relative;
+            z-index: 20;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #fb923c; /* orange-400 */
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+
+        /* --- SEARCH INPUT --- */
+        #ward-search {
+            min-width: 140px;
+            width: auto;
+            transition: all 0.2s ease;
+            background: transparent;
+            border-radius: 0;
+            padding-left: 0.25rem;
+            padding-right: 0;
+            text-align: center;
         }
-        
-        /* --- LEGEND STYLES --- */
+
+        #ward-search:focus {
+            background: rgba(255, 237, 213, 0.3);
+        }
+
+        #ward-search.has-clear {
+            padding-right: 0.25rem;
+        }
+
+        #clear-ward-search {
+            transition: opacity 120ms ease, color 120ms ease;
+            position: static;
+            transform: none;
+            background: #fff;
+            border-radius: 9999px;
+            cursor: pointer;
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 0.25rem;
+        }
+
+        /* --- LAYOUT HEIGHTS --- */
+        .dashboard-grid {
+            min-height: calc(100vh - 220px);
+        }
+
+        .map-panel {
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .map-panel #map {
+            flex: 1;
+            height: 100%;
+            min-height: 555px;
+        }
+
+        .sidebar-panels {
+            min-height: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-grid,
+            .map-panel,
+            .sidebar-panels {
+                min-height: auto;
+            }
+            .map-panel #map {
+                min-height: clamp(422px, 79.2vh, 686px);
+            }
+        }
+
+        /* --- GLOBAL / LEGEND / SCROLL --- */
+        body {
+            zoom: 0.9;
+            transform-origin: top center;
+        }
+
         #map-legend {
-            margin-top: 1rem;
-            padding: 0.85rem;
-            border-radius: 0.75rem; 
+            margin-top: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem; 
             border: 1px solid #e5e7eb;
             background-color: #f9fafb;
-            font-size: 0.85rem; 
+            font-size: 0.8rem; 
             line-height: 1.4;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        #map-legend .legend-heading {
+            font-weight: 600;
+            color: #374151;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            margin-right: 0.5rem;
+        }
+
+        #map-legend .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            flex: 1;
+            justify-content: center;
         }
 
         .legend-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            margin-bottom: 4px;
-            white-space: nowrap;
+            gap: 0.25rem;
+            min-width: 60px;
+            text-align: center;
         }
 
         .legend-square {
-            width: 14px;
-            height: 14px;
-            margin-right: 6px;
-            border: 1px solid #ccc; 
-            flex-shrink: 0; /* Ngăn ô vuông bị co lại */
+            width: 36px;
+            height: 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(0,0,0,0.06); 
+            flex-shrink: 0; 
         }
 
-        #ranking-table {
-            width: 100%;
-            table-layout: fixed;
+        #ward-suggestions::-webkit-scrollbar {
+            width: 6px;
+        }
+        #ward-suggestions::-webkit-scrollbar-thumb {
+            background-color: #fb923c;
+            border-radius: 3px;
         }
 
-        #ranking-table th,
-        #ranking-table td {
-            word-break: normal;
-            white-space: normal;
-            hyphens: auto;
+        @media (max-width: 768px) {
+            body {
+                zoom: 1;
+            }
+            #map {
+                height: 350px;
+            }
         }
-        /* --------------------- */
 
         @media (max-width: 640px) {
-            #map {
-                height: 375px;
+            #ward-search {
+                width: 100% !important;
+                text-align: center;
             }
-            #map-legend {
-                margin-top: 0.75rem;
-                padding: 0.75rem;
-                font-size: 0.8rem;
-            }
-            .legend-item {
-                margin-bottom: 2px;
-            }
-            #ranking-table {
-                font-size: 0.75rem;
-            }
-            #ranking-table th,
-            #ranking-table td {
-                padding: 0.45rem 0.3rem;
-                font-size: 0.7rem;
+            .ward-search-wrapper {
+                display: block;
+                width: 100%;
             }
         }
-
     </style>
 </head>
-<body class="bg-gray-100 font-sans text-base md:text-lg leading-relaxed p-3 md:p-8">
+<body class="bg-gray-100 font-sans text-gray-800 leading-relaxed min-h-screen">
 
-    <div class="max-w-[1000px] mx-auto space-y-4 md:space-y-6">
-        <main class="bg-white p-4 md:p-8 rounded-xl shadow-lg space-y-4 md:space-y-5">
-
-            <div class="flex flex-col md:flex-row gap-3 md:gap-4">
-                <div class="flex-1 space-y-1.5">
-                    <input id="ward-search" type="search" placeholder="Tìm phường/xã..." class="w-full p-3 md:p-4 text-base md:text-lg border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" aria-label="Tìm kiếm phường hoặc xã" autocomplete="off" />
-                    <div id="ward-suggestions" class="space-y-1 text-sm text-gray-600 hidden"></div>
-                </div>
-                <div class="flex-shrink-0 md:self-end">
-                    <button id="location-btn" class="w-full md:w-auto bg-orange-500 text-white text-base md:text-lg font-bold px-4 py-2.5 md:px-6 md:py-3 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                        </svg>
-                        Vị trí của tôi
-                    </button>
-                </div>
-            </div>
+    <div class="w-full space-y-4 px-0 py-4">
+        
+        <main class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-visible">
             
-            <div id="message-area" class="text-center text-gray-500 text-sm md:text-base mb-3 hidden"></div>
+            <div id="message-area" class="text-center text-gray-500 text-sm hidden py-2 bg-gray-50"></div>
 
-            <div id="results-state" class="space-y-4 md:space-y-5 hidden">
-                <div class="flex flex-col items-center justify-center">
-                    <div class="w-full text-center bg-orange-50 p-5 md:p-6 rounded-lg space-y-2.5 md:space-y-3">
-                        <h3 class="text-lg md:text-xl text-gray-800">Không khí tại <span id="city-name" class="text-orange-500 font-bold"></span> ô nhiễm tương đương hút <span id="cigarette-count" class="text-orange-500 text-xl font-bold md:text-2xl">...</span> điếu thuốc</h3>
-                        <div class="flex items-center justify-center gap-1 md:gap-3 flex-nowrap overflow-x-auto">
-                            <button type="button" class="mode-btn px-3 md:px-5 py-2 md:py-3 rounded-full border text-sm md:text-lg font-semibold transition-colors duration-150 whitespace-nowrap" data-mode="daily">mỗi ngày</button>
-                            <button type="button" class="mode-btn px-3 md:px-5 py-2 md:py-3 rounded-full border text-sm md:text-lg font-semibold transition-colors duration-150 whitespace-nowrap" data-mode="weekly">mỗi tuần</button>
-                            <button type="button" class="mode-btn px-3 md:px-5 py-2 md:py-3 rounded-full border text-sm md:text-lg font-semibold transition-colors duration-150 whitespace-nowrap" data-mode="monthly">mỗi tháng</button>
+            <div id="results-state" class="transition-all duration-300">
+                
+                <div class="px-6 pb-8 md:px-10">
+                    <div class="grid grid-cols-1 md:grid-cols-[70%_30%] gap-4 md:gap-6 items-start">
+                        
+                        <div class="space-y-2 self-end">
+                            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight">
+                                Năm 2024, ô nhiễm không khí tại 
+                                <span class="ward-search-wrapper relative inline-block group align-baseline text-orange-600">
+                                    <input id="ward-search" type="text" 
+                                        class="border-b-4 border-orange-400/50 focus:border-orange-500 font-extrabold placeholder-orange-300/70 focus:outline-none" 
+                                        placeholder="tìm phường/xã" autocomplete="off" />
+                                    
+                                    <button id="clear-ward-search" type="button" 
+                                        class="text-gray-400 hover:text-orange-500 hidden p-0.5 shadow-sm"
+                                        aria-label="Xóa">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                    
+                                    <div id="ward-suggestions" class="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto hidden z-50 text-left text-base font-normal"></div>
+                                </span>
+                                tương đương hút
+                            </h1>
                         </div>
-                        <p id="population-info" class="text-base md:text-lg text-orange-600 font-medium"></p>
+
+                        <div class="flex items-baseline justify-start md:justify-end gap-2 self-end">
+                            <span id="cigarette-count" class="text-5xl md:text-6xl font-black text-orange-500 tracking-tight leading-none">...</span>
+                            <span class="text-xl md:text-2xl font-bold text-orange-500">điếu thuốc</span>
+                        </div>
+
+                        <p id="population-info" class="text-sm text-gray-500 font-medium">Khoảng ... người chịu ảnh hưởng</p>
+
+                        <div class="justify-self-start md:justify-self-end">
+                            <div class="inline-flex bg-gray-100 p-1 rounded-lg">
+                                <button type="button" class="mode-btn px-4 py-1.5 rounded-md text-sm font-bold transition-all duration-200" data-mode="daily">mỗi ngày</button>
+                                <button type="button" class="mode-btn px-4 py-1.5 rounded-md text-sm font-bold transition-all duration-200" data-mode="weekly">mỗi tuần</button>
+                                <button type="button" class="mode-btn px-4 py-1.5 rounded-md text-sm font-bold transition-all duration-200" data-mode="monthly">mỗi tháng</button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-                
             </div>
-
         </main>
 
-        <section class="bg-white p-4 md:p-6 rounded-xl shadow-lg">
-            <h3 class="text-lg md:text-xl font-bold text-gray-700 mb-2 md:mb-3">Bản đồ chất lượng không khí</h3>
-            <div id="map"></div>
-            <div id="map-legend" class="text-gray-700"></div>
-        </section>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 dashboard-grid">
+            
+            <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-xl shadow-sm lg:col-span-2 map-panel">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold text-gray-800">Bản đồ chất lượng không khí năm 2024</h3>
+                </div>
+                <div id="map"></div>
+                <div id="map-legend" class="text-gray-700"></div>
+            </section>
 
-        <section class="bg-white p-4 md:p-6 rounded-xl shadow-lg">
-            <h3 class="text-lg md:text-xl font-bold text-gray-700 mb-2 md:mb-3">Xếp hạng chất lượng không khí</h3>
-            <div class="grid gap-4 md:gap-6 md:grid-cols-2">
-                <div>
-                    <h4 class="text-lg md:text-xl font-semibold text-gray-700 mb-2">Tệ nhất</h4>
-                    <ol id="top-worst-list" class="list-decimal list-inside space-y-1 text-gray-700"></ol>
-                </div>
-                <div>
-                    <h4 class="text-lg md:text-xl font-semibold text-gray-700 mb-2">Tốt nhất</h4>
-                    <ol id="top-best-list" class="list-decimal list-inside space-y-1 text-gray-700"></ol>
-                </div>
-            </div>
-            <button id="toggle-table-btn" class="mt-4 px-4 py-3 rounded-lg border border-orange-400 text-orange-600 font-semibold hover:bg-orange-50 transition-colors duration-150">Xem toàn bộ phường xã</button>
-            <div id="full-table-container" class="mt-4 hidden space-y-2.5 md:space-y-3.5">
-                <div class="flex flex-wrap gap-2 md:gap-3 items-center">
-                    <input id="ranking-search" type="search" placeholder="Tìm phường/xã..." class="flex-1 min-w-[220px] px-3 md:px-4 py-2.5 md:py-3 text-base md:text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
-                </div>
-                <div class="overflow-x-auto">
-                    <table id="ranking-table" class="divide-y divide-gray-200 text-xs md:text-sm">
-                        <thead class="bg-gray-100 text-gray-600 uppercase tracking-wide text-sm">
-                            <tr>
-                                <th class="px-4 py-2 text-left">
-                                    <button type="button" class="flex items-center gap-1" data-sort-key="rank" data-sort-default="asc">
-                                        <span>Xếp hạng ô nhiễm</span>
-                                        <span class="text-gray-400 text-sm" data-sort-indicator="rank"></span>
-                                    </button>
-                                </th>
-                                <th class="px-4 py-2 text-left">
-                                    <button type="button" class="flex items-center gap-1" data-sort-key="name" data-sort-default="asc">
-                                        <span>ĐVHC</span>
-                                        <span class="text-gray-400 text-sm" data-sort-indicator="name"></span>
-                                    </button>
-                                </th>
-                                <th class="px-4 py-2 text-left">
-                                    <button type="button" class="flex items-center gap-1" data-sort-key="aqi" data-sort-default="desc">
-                                        <span>AQI</span>
-                                        <span class="text-gray-400 text-sm" data-sort-indicator="aqi"></span>
-                                    </button>
-                                </th>
-                                <th class="px-4 py-2 text-left">
-                                    <button type="button" class="flex items-center gap-1" data-sort-key="pm25" data-sort-default="desc">
-                                        <span>PM2.5 (µg/m³)</span>
-                                        <span class="text-gray-400 text-sm" data-sort-indicator="pm25"></span>
-                                    </button>
-                                </th>
-                                <th class="px-4 py-2 text-left">
-                                    <button type="button" class="flex items-center gap-1" data-sort-key="population" data-sort-default="desc">
-                                        <span>Dân số (người)</span>
-                                        <span class="text-gray-400 text-sm" data-sort-indicator="population"></span>
-                                    </button>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="ranking-table-body" class="divide-y divide-gray-200 text-gray-700"></tbody>
-                    </table>
-                </div>
-                <div class="flex flex-col md:flex-row items-center justify-between gap-3 text-sm md:text-base text-gray-700">
-                    <div id="pagination-info" class="font-medium"></div>
-                    <div class="flex gap-2">
-                        <button id="prev-page-btn" class="px-4 py-2.5 text-base md:text-lg rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-150">Trang trước</button>
-                        <button id="next-page-btn" class="px-4 py-2.5 text-base md:text-lg rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors duration-150">Trang sau</button>
+            <div class="flex flex-col gap-3 h-full sidebar-panels">
+                <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-xl shadow-sm flex flex-col flex-1 h-full">
+                    <h3 id="ranking-title" class="text-lg font-bold text-gray-800">Xếp hạng nhanh</h3>
+                    <div id="ranking-panel-body" class="flex-1 relative">
+                        <div id="ranking-quick-view" class="space-y-3 absolute inset-0 overflow-y-auto pr-1">
+                            <div class="pt-2">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-2 h-6 bg-red-500 rounded-sm"></span>
+                                    <h4 class="text-base font-semibold text-gray-700">Tệ nhất (AQI cao)</h4>
+                                </div>
+                                <ol id="top-worst-list" class="list-decimal list-inside space-y-1.5 text-base text-gray-700 font-medium bg-gray-50 p-3 rounded-lg"></ol>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-2 h-6 bg-green-500 rounded-sm"></span>
+                                    <h4 class="text-base font-semibold text-gray-700">Tốt nhất (AQI thấp)</h4>
+                                </div>
+                                <ol id="top-best-list" class="list-decimal list-inside space-y-1.5 text-base text-gray-700 font-medium bg-gray-50 p-3 rounded-lg"></ol>
+                            </div>
+                        </div>
+
+                        <div id="full-table-container" class="hidden absolute inset-0 flex flex-col gap-3">
+                            <input id="ranking-search" type="search" placeholder="Tìm tên phường/xã" class="w-full px-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400" />
+
+                            <div class="flex-1 overflow-hidden border rounded-lg border-gray-200">
+                                <div class="h-full overflow-auto">
+                                    <table id="ranking-table" class="w-full divide-y divide-gray-200 text-sm">
+                                        <thead class="bg-gray-50 text-gray-600 uppercase tracking-wide text-xs font-semibold">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left">
+                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="rank">
+                                                        # <span class="text-gray-400" data-sort-indicator="rank"></span>
+                                                    </button>
+                                                </th>
+                                                <th class="px-4 py-3 text-left">
+                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="name">
+                                                        Phường/Xã <span class="text-gray-400" data-sort-indicator="name"></span>
+                                                    </button>
+                                                </th>
+                                                <th class="px-4 py-3 text-left">
+                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="aqi">
+                                                        AQI <span class="text-gray-400" data-sort-indicator="aqi"></span>
+                                                    </button>
+                                                </th>
+                                                <th class="px-4 py-3 text-left hidden md:table-cell">
+                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="pm25">
+                                                        PM2.5 <span class="text-gray-400" data-sort-indicator="pm25"></span>
+                                                    </button>
+                                                </th>
+                                                <th class="px-4 py-3 text-left hidden md:table-cell">
+                                                    <button type="button" class="flex items-center gap-1 hover:text-orange-600" data-sort-key="population">
+                                                        Dân số <span class="text-gray-400" data-sort-indicator="population"></span>
+                                                    </button>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ranking-table-body" class="divide-y divide-gray-200 text-gray-700 bg-white"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between text-sm text-gray-600">
+                                <div id="pagination-info"></div>
+                                <div class="flex gap-2">
+                                    <button id="prev-page-btn" class="px-3 py-1.5 rounded border hover:bg-gray-100 disabled:opacity-50">Trước</button>
+                                    <button id="next-page-btn" class="px-3 py-1.5 rounded border hover:bg-gray-100 disabled:opacity-50">Sau</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </section>
 
-        <footer class="text-center text-gray-400 text-xs md:text-base">
-            <p>Dữ liệu chất lượng không khí trung bình năm được tính toán từ trung bình các ngày trong năm, do <a href="https://geoi.edu.vn/vi/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">nhóm nghiên cứu GEOI</a> (Trường ĐH Công nghệ, ĐHQG Hà Nội) thực hiện.</p>
-            <p>Cách quy đổi dựa trên <a href="http://berkeleyearth.org/archive/air-pollution-and-cigarette-equivalence/" target="_blank" rel="noopener noreferrer" class="text-orange-500 hover:underline">nghiên cứu của Berkeley Earth</a>, trong đó 1 điếu thuốc/ngày tương đương với nồng độ PM2.5 khoảng 22 µg/m³.</p>
-            <p>Dữ liệu ranh giới phường/xã từ NXB Tài nguyên - Môi trường và Bản đồ Việt Nam. Bản đồ nền từ Google Satellite</p>
-        </footer>
+                    <button id="toggle-table-btn" class="w-full mt-4 py-2 rounded-lg border border-orange-100 text-orange-600 text-sm font-semibold hover:bg-orange-50 transition-colors">
+                        Xem chi tiết tất cả
+                    </button>
+                </section>
+
+                <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-xl shadow-sm border border-gray-100 text-[11px] text-gray-500 leading-relaxed space-y-2 mt-auto">
+                    <p>Dữ liệu chất lượng không khí trung bình năm theo phường, xã được tính toán bởi <a href="https://geoi.edu.vn/vi/" target="_blank" class="text-orange-500 hover:underline">nhóm nghiên cứu GEOI</a> (Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội).</p>
+                    <p>Quy đổi sang số điếu thuốc do VnExpress thực hiện, dựa trên nghiên cứu của <a href="http://berkeleyearth.org/archive/air-pollution-and-cigarette-equivalence/" target="_blank" class="text-orange-500 hover:underline">Berkeley Earth</a>. Trong đó, mỗi điếu thuốc một ngày tương đương khoảng 22 µg/m³ nồng độ PM2.5.</p>
+                    <p>Dữ liệu dân số và ranh giới phường xã từ NXB Tài nguyên - Môi trường và Bản đồ Việt Nam. Bản đồ nền của Google Satellite.</p>
+                </section>
+            </div>
+        </div>
+
     </div>
 
     <script>
         // --- GLOBAL VARIABLES ---
         let map;
         let geoJsonLayer;
-        let wardData; // Will hold our fetched GeoJSON
+        let wardData; 
         let featureIndexByName = new Map();
         let suggestionSource = [];
         let layerByName = new Map();
         const wardSearchInput = document.getElementById('ward-search');
         const wardSuggestions = document.getElementById('ward-suggestions');
-        const locationBtn = document.getElementById('location-btn');
+        const clearWardSearchBtn = document.getElementById('clear-ward-search');
         const messageArea = document.getElementById('message-area');
         const populationInfo = document.getElementById('population-info');
-        const cityNameEl = document.getElementById('city-name');
-        const aqiValueEl = document.getElementById('aqi-value');
-        const aqiRankEl = document.getElementById('aqi-rank');
+        // Removed cityNameEl as we now use the input itself
         const topWorstList = document.getElementById('top-worst-list');
         const topBestList = document.getElementById('top-best-list');
         const toggleTableBtn = document.getElementById('toggle-table-btn');
         const fullTableContainer = document.getElementById('full-table-container');
+        const rankingQuickView = document.getElementById('ranking-quick-view');
+        const rankingTitle = document.getElementById('ranking-title');
+        const rankingPanelBody = document.getElementById('ranking-panel-body');
         const resultsState = document.getElementById('results-state');
         const rankingSearch = document.getElementById('ranking-search');
         const rankingTableBody = document.getElementById('ranking-table-body');
@@ -248,90 +378,105 @@
         const sortButtons = Array.from(document.querySelectorAll('button[data-sort-key]'));
         const mapLegendContainer = document.getElementById('map-legend');
         const sortIndicators = new Map();
+        const localeCollator = new Intl.Collator('vi', { sensitivity: 'base' });
+        const POPULATION_PLACEHOLDER = 'Khoảng ... người chịu ảnh hưởng';
+        let wardSearchSizer = null;
+        const MAX_VISIBLE_WARD_MATCHES = 2;
+        const MAP_PADDING_RATIO = 0.1;
+        const RANKING_HEIGHT_MULTIPLIER = 1.1;
+        const LOCATION_OPTION_HTML = `
+            <button type="button" data-location-option="true"
+                class="w-full flex items-center gap-2 px-4 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-50 border-b border-gray-100 transition-colors focus:outline-none bg-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
+                </svg>
+                Vị trí của tôi
+            </button>
+        `;
+        const EMPTY_SUGGESTION_HTML = '<div class="p-3 text-sm text-gray-500">Không tìm thấy kết quả</div>';
+        let hanoiBounds = null;
+        
         sortButtons.forEach(btn => {
             const key = btn.dataset.sortKey;
             const indicator = document.querySelector(`[data-sort-indicator="${key}"]`);
-            if (key && indicator) {
-                sortIndicators.set(key, indicator);
-            }
+            if (key && indicator) sortIndicators.set(key, indicator);
         });
+
         if (wardSearchInput) {
             wardSearchInput.disabled = true;
+            setupWardSearchSizer();
+            resizeWardSearchInput();
         }
-        if (wardSuggestions) {
-            wardSuggestions.innerHTML = '<p class="text-gray-400 text-sm">Đang tải danh sách phường/xã...</p>';
-        }
-
+        
         const modeMultipliers = { daily: 1, weekly: 7, monthly: 30 };
         let baseCigarettes = 0;
         let currentMode = 'daily';
         let rankingData = [];
-        let rankingByName = new Map();
         let currentSort = 'aqi_desc';
-        const rowsPerPage = 10;
+        const rowsPerPage = 8;
         let currentPage = 1;
-        let currentSuggestions = [];
-        let activeTooltip = null;
+        let isFullTableVisible = false;
+        updateModeButtons();
 
+        // --- HELPERS ---
         const formatDecimal = (value, fractionDigits = 1) => {
-            if (!Number.isFinite(value)) {
-                return '—';
-            }
+            if (!Number.isFinite(value)) return '—';
             return value.toFixed(fractionDigits).replace('.', ',');
         };
+
+        function debounce(fn, delay = 150) {
+            let timeoutId = null;
+            return (...args) => {
+                if (timeoutId) clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => {
+                    timeoutId = null;
+                    fn(...args);
+                }, delay);
+            };
+        }
         
-        // Định nghĩa thang màu AQI cho Legend
         const aqiColorScale = [
-            // Sắp xếp theo thứ tự giảm dần của chất lượng (tăng dần của AQI) để hiển thị trong legend
-            { color: '#f39c12', range: '101 - 150', label: 'Kém' },
+            { color: '#2ecc71', range: '0 - 50', label: 'Tốt' },
             { color: '#f1c40f', range: '51 - 100', label: 'Trung bình' },
-            { color: '#2ecc71', range: '0 - 50', label: 'Tốt' }
+            { color: '#f39c12', range: '101 - 150', label: 'Kém' },
+            { color: '#e74c3c', range: '151 - 200', label: 'Xấu' },
+            { color: '#8e44ad', range: '201 - 300', label: 'Rất xấu' },
+            { color: '#5b2c6f', range: '300+', label: 'Nguy hại' }
         ];
 
         function renderMapLegend() {
             if (!mapLegendContainer) return;
-            let html = '<div class="font-bold mb-2">Chỉ số chất lượng không khí (AQI)</div>';
-            html += '<div class="space-y-1">';
-            aqiColorScale.forEach(item => {
-                html += `<div class="legend-item text-gray-700">
-                            <div class="legend-square" style="background-color: ${item.color};"></div>
-                            <div><span class="font-semibold">${item.range}</span> (${item.label})</div>
-                         </div>`;
-            });
-            html += '</div>';
-            mapLegendContainer.innerHTML = html;
+            const heading = '<div class="legend-heading">Chỉ số AQI</div>';
+            const items = aqiColorScale.map(item => `
+                <div class="legend-item text-gray-700 text-xs">
+                    <div class="legend-square" style="background-color: ${item.color};"></div>
+                    <div>
+                        <span class="font-semibold">${item.range}</span><br/>
+                        <span class="text-gray-500">${item.label}</span>
+                    </div>
+                </div>
+            `).join('');
+            mapLegendContainer.innerHTML = heading + `<div class="legend-items">${items}</div>`;
         }
 
-        // --- CORE FUNCTIONS ---
-
-        /**
-         * Normalizes geo properties that may use different keys.
-         */
         function getWardName(properties = {}) {
-            return properties.ten_phuong || properties.Name || properties.name || "Selected Area";
+            return properties.ten_phuong || properties.Name || properties.name || "Khu vực";
         }
 
         function getWardPopulation(properties = {}) {
             return parseNumericProperty(properties.Pop ?? properties.population ?? properties.pop);
         }
 
-        // Ưu tiên trường 'AQI' cho chỉ số AQI
         function getWardAqi(properties = {}) {
             return parseNumericProperty(properties.AQI ?? properties.aqi_mean ?? properties.aqi ?? properties['Air Quality']);
         }
 
-        // Ưu tiên trường 'PM2.5' cho nồng độ PM2.5
         function getWardPm25(properties = {}) {
-            return parseNumericProperty(properties['PM2.5'] ?? properties.pm25_mean ?? properties.pm25 ?? properties['Air Quality']);
+            return parseNumericProperty(properties['PM2.5'] ?? properties.pm25_mean ?? properties.pm25);
         }
 
-        /**
-         * Parses numbers that may arrive as strings using comma decimal separators.
-         */
         function parseNumericProperty(value) {
-            if (typeof value === 'number') {
-                return value;
-            }
+            if (typeof value === 'number') return value;
             if (typeof value === 'string') {
                 const normalized = value.replace(/\s/g, '').replace(/,/g, '.');
                 const parsed = parseFloat(normalized);
@@ -340,10 +485,100 @@
             return 0;
         }
 
+        function getNaturalHeight(element) {
+            if (!element) return 0;
+            const wasHidden = element.classList.contains('hidden');
+            if (!wasHidden) return element.scrollHeight;
+            
+            const prevDisplay = element.style.display;
+            const prevPosition = element.style.position;
+            const prevVisibility = element.style.visibility;
+            const prevPointerEvents = element.style.pointerEvents;
+            
+            element.classList.remove('hidden');
+            element.style.display = 'block';
+            element.style.position = 'absolute';
+            element.style.visibility = 'hidden';
+            element.style.pointerEvents = 'none';
+            
+            const height = element.scrollHeight;
+            
+            element.style.display = prevDisplay;
+            element.style.position = prevPosition;
+            element.style.visibility = prevVisibility;
+            element.style.pointerEvents = prevPointerEvents;
+            element.classList.add('hidden');
+            
+            return height;
+        }
+
+        function updateRankingPanelHeight() {
+            if (!rankingPanelBody) return;
+            const quickHeight = getNaturalHeight(rankingQuickView);
+            const tableHeight = getNaturalHeight(fullTableContainer);
+            let baseHeight = isFullTableVisible ? tableHeight : quickHeight;
+            if (baseHeight <= 0) baseHeight = Math.max(quickHeight, tableHeight);
+            rankingPanelBody.style.minHeight = baseHeight > 0 ? `${baseHeight}px` : '';
+        }
+
+        const scheduleRankingPanelHeightUpdate = (() => {
+            const raf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : (cb) => setTimeout(cb, 16);
+            const caf = window.cancelAnimationFrame ? window.cancelAnimationFrame.bind(window) : clearTimeout;
+            let frame = null;
+            return () => {
+                if (frame) caf(frame);
+                frame = raf(() => {
+                    frame = null;
+                    updateRankingPanelHeight();
+                });
+            };
+        })();
+
+        function setupWardSearchSizer() {
+            if (!wardSearchInput || wardSearchSizer) return;
+            wardSearchSizer = document.createElement('span');
+            wardSearchSizer.className = 'absolute invisible whitespace-pre pointer-events-none';
+            wardSearchSizer.style.position = 'absolute';
+            wardSearchSizer.style.visibility = 'hidden';
+            wardSearchSizer.style.whiteSpace = 'pre';
+            const computed = window.getComputedStyle(wardSearchInput);
+            wardSearchSizer.style.font = computed.font;
+            document.body.appendChild(wardSearchSizer);
+        }
+
+        function resizeWardSearchInput() {
+            if (!wardSearchInput) return;
+            if (!wardSearchSizer) setupWardSearchSizer();
+            if (!wardSearchSizer) return;
+            const placeholder = wardSearchInput.getAttribute('placeholder') || '';
+            const text = wardSearchInput.value || '';
+            const displayText = text || placeholder;
+            wardSearchSizer.innerText = displayText.replace(/\s/g, '\u00a0');
+            const extraPadding = wardSearchInput.classList.contains('has-clear') ? 70 : 24;
+            const width = Math.min(Math.max(wardSearchSizer.offsetWidth + extraPadding, 140), 520);
+            wardSearchInput.style.width = `${width}px`;
+            if (wardSuggestions) wardSuggestions.style.minWidth = `${Math.max(width, 140) + 24}px`;
+            updateClearButtonVisibility();
+        }
+
+        function updateClearButtonVisibility() {
+            if (!clearWardSearchBtn || !wardSearchInput) return;
+            const hasValue = wardSearchInput.value.trim().length > 0;
+            if (hasValue) {
+                clearWardSearchBtn.classList.remove('hidden');
+                wardSearchInput.classList.add('has-clear');
+            } else {
+                clearWardSearchBtn.classList.add('hidden');
+                wardSearchInput.classList.remove('has-clear');
+            }
+        }
+
         function updateModeButtons() {
             modeButtons.forEach(btn => {
                 const isActive = btn.dataset.mode === currentMode;
-                btn.className = `mode-btn px-3 md:px-5 py-2 md:py-3 rounded-full border text-sm md:text-lg font-semibold transition-colors duration-150 whitespace-nowrap ${isActive ? 'bg-orange-500 text-white border-orange-500 shadow' : 'bg-white text-gray-500 border-gray-300 hover:border-orange-300 hover:text-orange-600'}`;
+                btn.className = `mode-btn px-4 py-1.5 rounded-md text-sm font-bold transition-all duration-200 ${isActive 
+                    ? 'bg-white text-orange-600 shadow-sm ring-1 ring-gray-200' 
+                    : 'text-gray-400 hover:text-gray-600'}`;
             });
         }
 
@@ -358,7 +593,6 @@
         function setBaseCigarettes(value) {
             baseCigarettes = value;
             updateCigaretteDisplay();
-            updateModeButtons();
         }
 
         function setMode(mode) {
@@ -368,19 +602,6 @@
             updateCigaretteDisplay();
         }
 
-        function showResults() {
-            if (resultsState) {
-                resultsState.classList.remove('hidden');
-            }
-        }
-
-        function isMobileView() {
-            return window.matchMedia('(max-width: 640px)').matches;
-        }
-
-        /**
-         * Returns heatmap color based on AQI.
-         */
         function getHeatmapColor(aqi) {
             if (aqi <= 50) return '#2ecc71';
             if (aqi <= 100) return '#f1c40f';
@@ -403,725 +624,441 @@
 
         function getTooltipContent(feature = {}) {
             const name = getWardName(feature.properties || {});
-            const entry = rankingByName.get(name);
-            const total = rankingData.length;
-            if (entry && total > 0) {
-                // Sửa: Làm tròn AQI về 0 số thập phân
-                return `<div class="font-semibold text-base">${name}</div><div class="text-sm">AQI: ${formatDecimal(entry.aqi, 0)} · Hạng #${entry.rankWorst}/${total}</div>`;
-            }
             const aqi = getWardAqi(feature.properties || {});
-            // Sửa: Làm tròn AQI về 0 số thập phân
-            const aqiText = formatDecimal(aqi, 0);
-            return `<div class="font-semibold text-base">${name}</div><div class="text-sm">AQI: ${aqiText}</div>`;
+            return `<div class="font-semibold text-sm">${name}</div><div class="text-xs">AQI: ${formatDecimal(aqi, 0)}</div>`;
         }
 
         function updateLayerTooltip(layer) {
             if (!layer || !layer.feature) return;
-            if (isMobileView()) {
-                if (layer.unbindTooltip) {
-                    layer.unbindTooltip();
-                }
+            if (window.innerWidth < 640) {
+                if (layer.closeTooltip) layer.closeTooltip();
+                if (layer.unbindTooltip) layer.unbindTooltip();
                 return;
             }
             const content = getTooltipContent(layer.feature);
-            const tooltip = layer.getTooltip ? layer.getTooltip() : null;
-            if (tooltip && tooltip.setContent) {
-                tooltip.setContent(content);
-            } else if (layer.bindTooltip) {
-                layer.bindTooltip(content, { sticky: true, direction: 'auto' });
+            if (layer.bindTooltip) {
+                layer.bindTooltip(content, { sticky: true, direction: 'auto', className: 'bg-white px-2 py-1 shadow rounded border border-gray-200' });
             }
         }
 
-        function handleTooltipOpen(e) {
-            if (isMobileView()) return;
-            if (activeTooltip && activeTooltip !== e.tooltip && map) {
-                map.closeTooltip(activeTooltip);
-            }
-            activeTooltip = e.tooltip;
-        }
-
-        function handleTooltipClose(e) {
-            if (activeTooltip === e.tooltip) {
-                activeTooltip = null;
-            }
-        }
-
-        const sortDefaults = {
-            rank: 'asc',
-            name: 'asc',
-            aqi: 'desc',
-            pm25: 'desc',
-            population: 'desc'
-        };
-
-        const sortComparatorMap = {
-            rank_asc: (a, b) => a.rankWorst - b.rankWorst,
-            rank_desc: (a, b) => b.rankWorst - a.rankWorst,
-            name_asc: (a, b) => a.name.localeCompare(b.name, 'vi'),
-            name_desc: (a, b) => b.name.localeCompare(a.name, 'vi'),
-            aqi_desc: (a, b) => b.aqi - a.aqi,
-            aqi_asc: (a, b) => a.aqi - b.aqi,
-            pm25_desc: (a, b) => b.pm25 - a.pm25,
-            pm25_asc: (a, b) => a.pm25 - b.pm25,
-            population_desc: (a, b) => (b.population || 0) - (a.population || 0),
-            population_asc: (a, b) => (a.population || 0) - (b.population || 0)
-        };
-
-        /**
-         * Converts PM2.5 value to equivalent daily cigarettes.
-         * Formula: 1 cigarette/day ≈ 22 µg/m³ of PM2.5
-         */
         function pm25ToCigarettes(pm25) {
-            if (typeof pm25 !== 'number' || pm25 < 0) {
-                return 0;
-            }
+            if (typeof pm25 !== 'number' || pm25 < 0) return 0;
             return pm25 / 22;
         }
-        
-        /**
-         * Fetches and loads the local GeoJSON data, then initializes the map.
-         */
+
+        // --- MAIN INITIALIZATION ---
         async function initializeMapAndData() {
             try {
-                // Fetch the local GeoJSON file
                 const response = await fetch('./HanoiAQ.geojson');
-                if (!response.ok) {
-                    throw new Error(`Không thể tải HanoiAQ.geojson: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`Không thể tải dữ liệu.`);
+                
                 wardData = await response.json();
                 buildFeatureLookups(wardData);
                 layerByName = new Map();
 
-                // Initialize the map
-                const mapCenter = [21.0285, 105.8542]; // Center of Hanoi
-                const hanoiBounds = L.latLngBounds([[20.5, 105.2], [21.5, 106.1]]);
+                const mapCenter = [21.0285, 105.8542];
                 map = L.map('map', {
                     attributionControl: false,
-                    maxBounds: hanoiBounds,
-                    maxBoundsViscosity: 1.0,
+                    zoomControl: false, 
                     minZoom: 9
                 }).setView(mapCenter, 10);
-                L.tileLayer('https://mt.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-                    maxZoom: 18,
-                    minZoom: 9
-                }).addTo(map);
-                map.on('drag', () => {
-                    map.panInsideBounds(hanoiBounds, { animate: false });
-                });
-                map.on('tooltipopen', handleTooltipOpen);
-                map.on('tooltipclose', handleTooltipClose);
                 
-                // Setup the ward search input
+                L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+                L.tileLayer('https://mt.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                    maxZoom: 18, minZoom: 9
+                }).addTo(map);
+
                 initializeWardSearch(wardData);
 
-                // Add GeoJSON layer
                 geoJsonLayer = L.geoJSON(wardData, {
                     style: feature => getWardStyle(feature.properties),
                     onEachFeature: (feature, layer) => {
-                        // Add click listener to each ward polygon
                         layer.on('click', () => {
-                            const clickedName = getWardName(feature.properties);
-                            const featureIndex = getFeatureIndexByName(clickedName);
-                            if (featureIndex >= 0) {
-                                selectWardByIndex(featureIndex, { fitBounds: false, layer });
-                            } else {
-                                updateUI(feature.properties);
-                                highlightLayer(layer);
+                            const name = getWardName(feature.properties);
+                            const idx = getFeatureIndexByName(name);
+                            if (idx >= 0) selectWardByIndex(idx, { fitBounds: false, layer });
+                            if (activeTooltipLayer && activeTooltipLayer !== layer) {
+                                closeActiveTooltip();
                             }
+                            if (layer.openTooltip) layer.openTooltip();
+                            activeTooltipLayer = layer;
                         });
-
                         const layerName = getWardName(feature.properties);
-                        if (layerName) {
-                            layerByName.set(layerName, layer);
-                        }
-
+                        if (layerName) layerByName.set(layerName, layer);
                         updateLayerTooltip(layer);
                     }
                 }).addTo(map);
 
-                // Zoom the map to fit the bounds of the GeoJSON layer
-                map.fitBounds(geoJsonLayer.getBounds(), getMobileFitBoundsOptions());
-                refreshMapLayout();
-
+                hanoiBounds = geoJsonLayer.getBounds().pad(MAP_PADDING_RATIO);
+                map.setMaxBounds(hanoiBounds);
+                map.fitBounds(hanoiBounds);
+                map.on('dragstart', closeActiveTooltip);
+                map.on('zoomstart', closeActiveTooltip);
+                map.on('drag', () => {
+                    if (!hanoiBounds) return;
+                    const center = map.getCenter();
+                    if (!hanoiBounds.contains(center)) {
+                        map.panInsideBounds(hanoiBounds, { animate: false });
+                    }
+                });
                 populateRanking(wardData);
-
-                // Add event listeners for controls
-                locationBtn.addEventListener('click', onLocationClick);
-
-                showMessage("Chọn một phường/xã từ ô tìm kiếm, bấm vào bản đồ hoặc dùng nút định vị để bắt đầu.", 'info');
-
             } catch (error) {
-                console.error("Lỗi khởi tạo ứng dụng:", error);
-                showMessage(error.message, 'error');
+                console.error(error);
+                showMessage("Không thể tải dữ liệu bản đồ.", 'error');
             }
         }
-        
-        /**
-         * Clears previous highlights and highlights the selected layer
-         */
+
+        // --- UI UPDATES ---
         let lastHighlightedLayer = null;
+        let activeTooltipLayer = null;
         function highlightLayer(layer) {
-            // Reset style of the previously highlighted layer
-            if (lastHighlightedLayer) {
+            if (lastHighlightedLayer && geoJsonLayer) {
                 geoJsonLayer.resetStyle(lastHighlightedLayer);
+                lastHighlightedLayer = null;
             }
-            
-            // Apply new highlight style
-            if(layer) {
-                layer.setStyle({
-                    color: '#e85d04', // A darker orange
-                    weight: 4,
-                    fillOpacity: 0.6
-                });
+            if (layer) {
+                layer.setStyle({ color: '#e85d04', weight: 3, fillOpacity: 0.7 });
                 layer.bringToFront();
                 lastHighlightedLayer = layer;
             }
         }
 
-        function getMobileFitBoundsOptions(baseOptions = {}) {
-            if (!map || window.innerWidth > 640) {
-                return baseOptions;
+        function clearWardSelection() {
+            if (wardSearchInput) {
+                wardSearchInput.value = '';
+                resizeWardSearchInput();
+                wardSearchInput.focus();
             }
-            const size = map.getSize();
-            const paddingValue = Math.round(Math.min(size.x, size.y) * 0.3);
-            return {
-                ...baseOptions,
-                padding: L.point(paddingValue, paddingValue)
-            };
+            if (wardSuggestions) wardSuggestions.classList.add('hidden');
+            updateClearButtonVisibility();
+            highlightLayer(null);
+            closeActiveTooltip();
+            if (map && hanoiBounds) {
+                map.fitBounds(hanoiBounds, { animate: true });
+            }
+            baseCigarettes = 0;
+            if (cigaretteCountEl) cigaretteCountEl.innerText = '...';
+            if (populationInfo) populationInfo.innerText = POPULATION_PLACEHOLDER;
+        }
+
+        function closeActiveTooltip() {
+            if (activeTooltipLayer && activeTooltipLayer.closeTooltip) {
+                activeTooltipLayer.closeTooltip();
+            }
+            activeTooltipLayer = null;
         }
 
         function buildFeatureLookups(data) {
             featureIndexByName = new Map();
             suggestionSource = [];
-            if (!data || !Array.isArray(data.features)) {
-                return;
-            }
+            if (!data || !Array.isArray(data.features)) return;
             data.features.forEach((feature, index) => {
                 const name = getWardName(feature.properties);
                 if (!name) return;
                 const normalized = name.trim().toLowerCase();
-                if (!featureIndexByName.has(normalized)) {
-                    featureIndexByName.set(normalized, index);
-                }
-                feature.properties.__featureIndex = index;
+                if (!featureIndexByName.has(normalized)) featureIndexByName.set(normalized, index);
                 suggestionSource.push({ name, normalized, index });
             });
             suggestionSource.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
         }
 
-        /**
-         * Prepares the ward search input and default suggestions.
-         */
         function initializeWardSearch(data) {
-            if (!wardSearchInput || !wardSuggestions) return;
-            const hasData = data && Array.isArray(data.features);
-            wardSearchInput.value = '';
-            wardSearchInput.disabled = !hasData;
-            wardSearchInput.placeholder = hasData ? 'Tìm phường/xã...' : 'Không có dữ liệu';
-            wardSuggestions.innerHTML = '';
-            wardSuggestions.classList.toggle('hidden', true);
+            if (!wardSearchInput) return;
+            wardSearchInput.disabled = false;
+            resizeWardSearchInput();
+            updateClearButtonVisibility();
+            // Allow focus to auto-select text for easy replacement
+            wardSearchInput.addEventListener('focus', function() {
+                this.select();
+                updateWardSuggestions(this.value);
+                resizeWardSearchInput();
+            });
         }
 
         function getFeatureIndexByName(name = '') {
             if (!name) return -1;
             const normalized = name.trim().toLowerCase();
-            return featureIndexByName.has(normalized) ? featureIndexByName.get(normalized) : -1;
-        }
-
-        function getLayerByName(name = '') {
-            if (!name) return null;
-            return layerByName.get(name) || null;
+            return featureIndexByName.get(normalized) ?? -1;
         }
 
         function updateWardSuggestions(query = '') {
             if (!wardSuggestions) return;
-            const trimmedQuery = (query || '').trim();
-            const hasQuery = trimmedQuery.length > 0;
-            wardSuggestions.classList.toggle('hidden', !hasQuery);
-            if (!hasQuery) {
-                wardSuggestions.innerHTML = '';
-                currentSuggestions = [];
-                return;
+            const trimmed = (query || '').trim().toLowerCase();
+            const matches = [];
+            if (trimmed) {
+                for (const item of suggestionSource) {
+                    if (item.normalized.includes(trimmed)) {
+                        matches.push(item);
+                    }
+                    if (matches.length >= MAX_VISIBLE_WARD_MATCHES) break;
+                }
+            } else {
+                matches.push(...suggestionSource.slice(0, MAX_VISIBLE_WARD_MATCHES));
             }
-            if (!wardData || !Array.isArray(wardData.features)) {
-                wardSuggestions.innerHTML = '<p class="text-gray-400 text-xs px-2">Đang tải dữ liệu...</p>';
-                currentSuggestions = [];
-                return;
+            const suggestionsHtml = matches.length
+                ? matches.map(item => `
+                    <div class="px-4 py-2 hover:bg-orange-50 cursor-pointer text-sm text-gray-700 border-b last:border-0 border-gray-100 transition-colors" 
+                        data-index="${item.index}">
+                        ${item.name}
+                    </div>
+                `).join('')
+                : EMPTY_SUGGESTION_HTML;
+
+            wardSuggestions.innerHTML = LOCATION_OPTION_HTML + suggestionsHtml;
+            if (wardSearchInput) {
+                const width = wardSearchInput.offsetWidth || 0;
+                wardSuggestions.style.minWidth = `${Math.max(width, 120) + 24}px`;
             }
-
-            if (suggestionSource.length === 0) {
-                wardSuggestions.innerHTML = '<p class="text-gray-400 text-xs px-2 py-1">Chưa có dữ liệu để gợi ý.</p>';
-                currentSuggestions = [];
-                return;
-            }
-
-            const normalized = trimmedQuery.toLowerCase();
-            let pool = suggestionSource.filter(entry => entry.normalized.includes(normalized));
-
-            currentSuggestions = pool.slice(0, 3);
-
-            if (currentSuggestions.length === 0) {
-                wardSuggestions.innerHTML = '<p class="text-gray-400 text-xs px-2 py-1">Không tìm thấy gợi ý phù hợp.</p>';
-                return;
-            }
-
-            wardSuggestions.innerHTML = currentSuggestions.map(item => {
-                return `
-                    <button type="button" class="w-full text-left px-3 py-1.5 rounded-md border border-gray-200 hover:border-orange-400 hover:bg-orange-50 focus:outline-none focus:ring-1 focus:ring-orange-400 transition text-sm" data-suggestion-index="${item.index}">
-                        <span class="block font-medium text-gray-800 truncate">${item.name}</span>
-                    </button>
-                `;
-            }).join('');
+            wardSuggestions.classList.remove('hidden');
         }
 
         function selectWardByIndex(index, options = {}) {
-            if (!wardData || !wardData.features || typeof index !== 'number' || index < 0 || index >= wardData.features.length) {
-                return;
-            }
+            if (!wardData || index < 0 || index >= wardData.features.length) return;
             const feature = wardData.features[index];
             const name = getWardName(feature.properties);
-            updateUI(feature.properties);
-            if (wardSearchInput) {
-                wardSearchInput.value = name;
-            }
-            if (options.keepSuggestions !== true && wardSuggestions) {
-                wardSuggestions.innerHTML = '';
-                wardSuggestions.classList.add('hidden');
-                currentSuggestions = [];
+            const {
+                layer,
+                fitBounds = true,
+                updateInput = true
+            } = options;
+            
+            updateUI(feature.properties, updateInput);
+            
+            if (wardSuggestions) wardSuggestions.classList.add('hidden');
+            if (wardSearchInput && updateInput) {
+                wardSearchInput.blur(); // Unfocus to dismiss keyboard/cursor
             }
 
-            const targetLayer = options.layer || getLayerByName(name);
+            const targetLayer = layer || layerByName.get(name);
             if (targetLayer) {
-                if (options.fitBounds !== false && map && targetLayer.getBounds) {
-                    map.fitBounds(targetLayer.getBounds(), getMobileFitBoundsOptions());
+                if (fitBounds && map) {
+                    const bounds = targetLayer.getBounds();
+                    const mapSize = map.getSize();
+                    const paddingX = mapSize.x * MAP_PADDING_RATIO;
+                    const paddingY = mapSize.y * MAP_PADDING_RATIO;
+                    map.fitBounds(bounds, { padding: [paddingY, paddingX] });
                 }
                 highlightLayer(targetLayer);
             }
         }
 
-        function handleWardSearchSubmit(query) {
-            const trimmed = (query || '').trim();
-            if (!trimmed) return;
-            const exactIndex = getFeatureIndexByName(trimmed);
-            if (exactIndex >= 0) {
-                selectWardByIndex(exactIndex);
-                return;
-            }
-            if (currentSuggestions.length > 0) {
-                selectWardByIndex(currentSuggestions[0].index);
-                return;
-            }
-            showMessage('Không tìm thấy phường/xã khớp với tìm kiếm.', 'info');
-        }
-
-        /**
-         * Updates the HTML elements with the data from a feature's properties.
-         */
-        function updateUI(properties) {
-            // *** ASSUMPTIONS ***
-            // Adjust these property keys to match your GeoJSON file
+        function updateUI(properties, syncInput = true) {
             const pm25 = getWardPm25(properties);
-            const aqi = getWardAqi(properties);
             const name = getWardName(properties);
             const population = getWardPopulation(properties);
-            const rankingEntry = rankingByName.get(name);
-            
-            // Lỗi đã được sửa: Tính toán điếu thuốc luôn dùng giá trị PM2.5
-            const cigaretteCount = pm25ToCigarettes(pm25); 
+            const cigs = pm25ToCigarettes(pm25);
 
-            // Update text content
-            if (wardSearchInput && name) {
-                wardSearchInput.value = name;
-            }
-            if (cityNameEl) {
-                cityNameEl.innerText = name;
-            }
-            if (aqiValueEl) {
-                // Sửa: Làm tròn AQI về 0 số thập phân
-                aqiValueEl.innerText = formatDecimal(aqi, 0);
-            }
-            if (aqiRankEl) {
-                if (rankingEntry) {
-                    aqiRankEl.innerText = `(xếp hạng #${rankingEntry.rankWorst} trên ${rankingData.length}, #1 là tệ nhất)`;
-                } else {
-                    aqiRankEl.innerText = `(xếp hạng —)`;
+            // Keep the input text in sync with the selected ward (map clicks or search results).
+            if (wardSearchInput && syncInput) {
+                if (wardSearchInput.value !== name) {
+                    wardSearchInput.value = name;
                 }
+                resizeWardSearchInput();
+                updateClearButtonVisibility();
             }
-            setBaseCigarettes(cigaretteCount);
+
+            setBaseCigarettes(cigs);
 
             if (populationInfo) {
                 populationInfo.innerText = population > 0
-                    ? `Có khoảng ${Math.round(population).toLocaleString('vi-VN')} người đang hít cùng bầu không khí này.`
-                    : '';
+                    ? `Khoảng ${Math.round(population).toLocaleString('vi-VN')} người chịu ảnh hưởng.`
+                    : POPULATION_PLACEHOLDER;
             }
-
-            showResults();
-
-            // Clear any messages
-            showMessage('', 'info');
-
-            if (geoJsonLayer) {
-                geoJsonLayer.eachLayer(layer => {
-                    if (getWardName(layer.feature.properties) === name) {
-                        updateLayerTooltip(layer);
-                    }
-                });
-            }
+            if (resultsState) resultsState.classList.remove('hidden');
         }
 
-        /**
-         * Builds the AQI ranking datasets and renders summary lists.
-         */
+        // --- RANKING & TABLE ---
         function populateRanking(data) {
-            if (!data || !data.features) {
-                rankingData = [];
-                if (topWorstList) topWorstList.innerHTML = '';
-                if (topBestList) topBestList.innerHTML = '';
-                if (rankingTableBody) rankingTableBody.innerHTML = '';
-                return;
-            }
+            if (!data || !data.features) return;
+            rankingData = data.features.map((f, i) => ({
+                name: getWardName(f.properties),
+                aqi: getWardAqi(f.properties),
+                pm25: getWardPm25(f.properties),
+                population: getWardPopulation(f.properties),
+                rankWorst: 0
+            })).filter(e => e.name).sort((a, b) => b.aqi - a.aqi);
 
-            rankingData = data.features
-                .map((feature, index) => {
-                    const properties = feature.properties || {};
-                    const name = getWardName(properties);
-                    const aqi = getWardAqi(properties);
-                    const pm25 = getWardPm25(properties);
-                    const population = getWardPopulation(properties);
-                    return {
-                        name,
-                        aqi,
-                        pm25,
-                        population,
-                        feature,
-                        featureIndex: index
-                    };
-                })
-                .filter(entry => entry.name);
-
-            rankingData.sort((a, b) => b.aqi - a.aqi);
-
-            rankingByName = new Map();
-            rankingData.forEach((entry, index) => {
-                entry.rankWorst = index + 1;
-                rankingByName.set(entry.name, entry);
+            rankingData.forEach((e, i) => {
+                e.rankWorst = i + 1;
             });
 
             if (topWorstList) {
-                topWorstList.innerHTML = '';
-                rankingData.slice(0, 3).forEach(entry => {
-                    const li = document.createElement('li');
-                    // Sửa: Làm tròn AQI về 0 số thập phân
-                    li.textContent = `${entry.name}: AQI ${formatDecimal(entry.aqi, 0)}`;
-                    topWorstList.appendChild(li);
-                });
+                topWorstList.innerHTML = rankingData.slice(0, 5).map(e => `<li><span class="font-bold">${e.name}</span>: AQI ${formatDecimal(e.aqi, 0)}</li>`).join('');
             }
-
             if (topBestList) {
-                topBestList.innerHTML = '';
-                const bestEntries = rankingData.slice(-3).reverse();
-                bestEntries.forEach(entry => {
-                    const li = document.createElement('li');
-                    // Sửa: Làm tròn AQI về 0 số thập phân
-                    li.textContent = `${entry.name}: AQI ${formatDecimal(entry.aqi, 0)}`;
-                    topBestList.appendChild(li);
-                });
+                topBestList.innerHTML = rankingData.slice(-5).reverse().map(e => `<li><span class="font-bold">${e.name}</span>: AQI ${formatDecimal(e.aqi, 0)}</li>`).join('');
             }
-
-            currentPage = 1;
+            
             refreshRankingTable();
-            if (geoJsonLayer) {
-                geoJsonLayer.eachLayer(updateLayerTooltip);
-            }
-
-            if (resultsState && !resultsState.classList.contains('hidden') && cityNameEl && cityNameEl.innerText && cityNameEl.innerText !== '...') {
-                const currentFeature = wardData.features.find(f => getWardName(f.properties) === cityNameEl.innerText);
-                if (currentFeature) {
-                    updateUI(currentFeature.properties);
-                }
-            }
-
-            if (wardSearchInput) {
-                updateWardSuggestions(wardSearchInput.value);
-            }
+            scheduleRankingPanelHeightUpdate();
         }
 
-        /**
-         * Renders the full ranking table with current filters and sort order.
-         */
         function refreshRankingTable() {
             if (!rankingTableBody) return;
+            const search = rankingSearch ? rankingSearch.value.trim().toLowerCase() : '';
+            const rows = search
+                ? rankingData.filter(r => r.name.toLowerCase().includes(search))
+                : [...rankingData];
 
-            let rows = rankingData.slice();
+            const [key, dir] = currentSort.split('_');
+            rows.sort((a, b) => {
+                let valA = a[key];
+                let valB = b[key];
+                if (key === 'rank') {
+                    valA = a.rankWorst;
+                    valB = b.rankWorst;
+                }
+                const bothStrings = typeof valA === 'string' || typeof valB === 'string';
+                if (bothStrings) {
+                    const aStr = (valA ?? '').toString();
+                    const bStr = (valB ?? '').toString();
+                    return dir === 'asc'
+                        ? localeCollator.compare(aStr, bStr)
+                        : localeCollator.compare(bStr, aStr);
+                }
+                valA = Number(valA) || 0;
+                valB = Number(valB) || 0;
+                return dir === 'asc' ? valA - valB : valB - valA;
+            });
 
-            const searchTerm = rankingSearch ? rankingSearch.value.trim().toLowerCase() : '';
-            if (searchTerm) {
-                rows = rows.filter(entry => entry.name.toLowerCase().includes(searchTerm));
-            }
-
-            if (!sortComparatorMap[currentSort]) {
-                currentSort = 'aqi_desc';
-            }
-
-            rows.sort(sortComparatorMap[currentSort]);
-
-            const totalRows = rows.length;
-            const totalPages = totalRows === 0 ? 1 : Math.ceil(totalRows / rowsPerPage);
-            if (currentPage > totalPages) {
-                currentPage = totalPages;
-            }
-            if (currentPage < 1) {
-                currentPage = 1;
-            }
+            const totalPages = Math.ceil(rows.length / rowsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
             const start = (currentPage - 1) * rowsPerPage;
-            const end = start + rowsPerPage;
-            const pageRows = rows.slice(start, end);
+            const pageRows = rows.slice(start, start + rowsPerPage);
 
-            rankingTableBody.innerHTML = '';
+            rankingTableBody.innerHTML = pageRows.map(e => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3 text-gray-500">#${e.rankWorst}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">${e.name}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded text-xs font-bold" style="background-color:${getHeatmapColor(e.aqi)}; color:white;">
+                            ${formatDecimal(e.aqi, 0)}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600 hidden md:table-cell">${formatDecimal(e.pm25, 1)}</td>
+                    <td class="px-4 py-3 text-gray-600 hidden md:table-cell">${e.population ? e.population.toLocaleString('vi-VN') : '-'}</td>
+                </tr>
+            `).join('');
 
-            if (pageRows.length === 0) {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td colspan="5" class="px-4 py-4 text-center text-gray-500">Không có dữ liệu phù hợp.</td>`;
-                rankingTableBody.appendChild(tr);
-            } else {
-                pageRows.forEach(entry => {
-                    const tr = document.createElement('tr');
-                    // Sửa: Làm tròn AQI về 0 số thập phân
-                    tr.innerHTML = `
-                        <td class="px-4 py-3 text-gray-700">#${entry.rankWorst}</td>
-                        <td class="px-4 py-3 font-semibold text-gray-800">${entry.name}</td>
-                        <td class="px-4 py-3 text-gray-700">${formatDecimal(entry.aqi, 0)}</td>
-                        <td class="px-4 py-3 text-gray-700">${formatDecimal(entry.pm25, 1)}</td>
-                        <td class="px-4 py-3 text-gray-700">${entry.population > 0 ? Math.round(entry.population).toLocaleString('vi-VN') : '—'}</td>
-                    `;
-                    rankingTableBody.appendChild(tr);
-                });
-            }
-
-            updatePaginationControls(totalRows, totalPages, start, Math.min(end, totalRows));
-            updateSortIndicators();
+            if (paginationInfo) paginationInfo.innerText = `Trang ${currentPage}/${totalPages}`;
+            if (prevPageBtn) prevPageBtn.disabled = currentPage <= 1;
+            if (nextPageBtn) nextPageBtn.disabled = currentPage >= totalPages;
+            scheduleRankingPanelHeightUpdate();
         }
 
-        function setSort(sortValue) {
-            if (!sortComparatorMap[sortValue]) {
-                sortValue = 'aqi_desc';
-            }
-            currentSort = sortValue;
-            currentPage = 1;
-            refreshRankingTable();
-        }
-
-        function toggleSortForKey(key) {
-            if (!key) return;
-            const [activeKey, activeDirection] = currentSort.split('_');
-            let nextDirection;
-            if (activeKey === key) {
-                nextDirection = activeDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                nextDirection = sortDefaults[key] || 'asc';
-            }
-            const candidate = `${key}_${nextDirection}`;
-            setSort(sortComparatorMap[candidate] ? candidate : 'aqi_desc');
-        }
-
-        function updateSortIndicators() {
-            const [activeKey, activeDirection] = currentSort.split('_');
-            sortIndicators.forEach((indicator, key) => {
-                if (key === activeKey) {
-                    indicator.textContent = activeDirection === 'asc' ? '▲' : '▼';
-                    indicator.classList.remove('text-gray-400');
-                    indicator.classList.add('text-orange-500');
-                } else {
-                    indicator.textContent = '';
-                    indicator.classList.remove('text-orange-500');
-                    indicator.classList.add('text-gray-400');
-                }
-            });
-        }
-
-        function updatePaginationControls(totalRows, totalPages, startIndex, endIndex) {
-            if (paginationInfo) {
-                if (totalRows === 0) {
-                    paginationInfo.textContent = 'Không có kết quả nào.';
-                } else {
-                    const displayStart = startIndex + 1;
-                    const displayEnd = endIndex;
-                    paginationInfo.textContent = `Hiển thị ${displayStart.toLocaleString('vi-VN')} – ${displayEnd.toLocaleString('vi-VN')} trong tổng số ${totalRows.toLocaleString('vi-VN')} phường/xã · Trang ${currentPage}/${totalPages}`;
-                }
-            }
-            if (prevPageBtn) {
-                prevPageBtn.disabled = currentPage <= 1;
-                const disablePrev = currentPage <= 1;
-                prevPageBtn.classList.toggle('opacity-50', disablePrev);
-                prevPageBtn.classList.toggle('cursor-not-allowed', disablePrev);
-            }
-            if (nextPageBtn) {
-                nextPageBtn.disabled = currentPage >= totalPages;
-                const disableNext = currentPage >= totalPages;
-                nextPageBtn.classList.toggle('opacity-50', disableNext);
-                nextPageBtn.classList.toggle('cursor-not-allowed', disableNext);
-            }
-        }
-
-        /**
-        * Xử lý sự kiện khi người dùng bấm nút "Vị trí của tôi".
-         */
-        function onLocationClick() {
-            if (!navigator.geolocation) {
-                showMessage("Trình duyệt của bạn không hỗ trợ xác định vị trí.", 'error');
-                return;
-            }
-            
-            showMessage("Đang lấy vị trí của bạn...", 'info');
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    const userPoint = turf.point([longitude, latitude]);
-                    
-                    let foundWard = null;
-                    let foundLayer = null;
-
-                    // Duyệt các lớp bản đồ để tìm vùng chứa điểm của người dùng
-                    geoJsonLayer.eachLayer(layer => {
-                        if (foundWard) return; // Đã tìm thấy thì dừng
-                        
-                        const isInside = turf.booleanPointInPolygon(userPoint, layer.feature.geometry);
-                        
-                        if (isInside) {
-                            foundWard = layer.feature;
-                            foundLayer = layer;
-                        }
-                    });
-
-                    if (foundWard) {
-                        const targetName = getWardName(foundWard.properties);
-                        const featureIndex = getFeatureIndexByName(targetName);
-                        if (featureIndex >= 0) {
-                            selectWardByIndex(featureIndex, { layer: foundLayer });
-                        } else {
-                            updateUI(foundWard.properties);
-                            if (foundLayer) {
-                                map.fitBounds(foundLayer.getBounds(), getMobileFitBoundsOptions());
-                                highlightLayer(foundLayer);
-                            }
-                        }
-                    } else {
-                        showMessage("Vị trí của bạn nằm ngoài phạm vi bản đồ các phường/xã của Hà Nội.", 'warn');
-                    }
-                },
-                () => {
-                    showMessage("Không thể lấy vị trí. Vui lòng kiểm tra quyền truy cập vị trí của trình duyệt.", 'error');
-                }
-            );
-        }
+        // --- EVENT LISTENERS ---
+        modeButtons.forEach(btn => btn.addEventListener('click', () => setMode(btn.dataset.mode)));
         
-        /**
-         * Displays a message to the user.
-         */
-        function showMessage(message, type = 'info') {
-            messageArea.textContent = message;
-            
-            // Remove old colors
-            messageArea.classList.remove('text-red-500', 'text-yellow-500', 'text-gray-500', 'hidden');
-            
-            if (!message) {
-                messageArea.classList.add('hidden');
-                return;
-            }
-
-            // Add new color based on type
-            if (type === 'error') {
-                messageArea.classList.add('text-red-500');
-            } else if (type === 'warn') {
-                messageArea.classList.add('text-yellow-500');
-            } else {
-                messageArea.classList.add('text-gray-500');
-            }
-        }
-
-
-        // --- APP START ---
-
-        modeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const mode = btn.dataset.mode;
-                setMode(mode);
-            });
-        });
-
-        if (toggleTableBtn && fullTableContainer) {
-            toggleTableBtn.addEventListener('click', () => {
-                const isHidden = fullTableContainer.classList.toggle('hidden');
-                toggleTableBtn.textContent = isHidden ? 'Xem toàn bộ bảng' : 'Ẩn bảng';
-            });
-        }
-
         if (wardSearchInput) {
-            wardSearchInput.addEventListener('input', (event) => {
-                updateWardSuggestions(event.target.value);
+            // Trigger on input and focus
+            wardSearchInput.addEventListener('input', (e) => {
+                resizeWardSearchInput();
+                updateWardSuggestions(e.target.value);
             });
-            wardSearchInput.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    handleWardSearchSubmit(event.target.value);
-                }
+        }
+
+        if (clearWardSearchBtn) {
+            clearWardSearchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                clearWardSelection();
             });
         }
 
         if (wardSuggestions) {
-            wardSuggestions.addEventListener('click', (event) => {
-                const target = event.target.closest('button[data-suggestion-index]');
-                if (!target) return;
-                const index = Number(target.dataset.suggestionIndex);
-                if (!Number.isNaN(index)) {
-                    selectWardByIndex(index);
+            // Prevent blurring when clicking suggestions
+            wardSuggestions.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+            
+            wardSuggestions.addEventListener('click', (e) => {
+                const locationOption = e.target.closest('[data-location-option="true"]');
+                if (locationOption) {
+                    onLocationClick();
+                    return;
                 }
+                const item = e.target.closest('div[data-index]');
+                if (item) selectWardByIndex(parseInt(item.dataset.index, 10));
             });
         }
+        
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', (e) => {
+            if (wardSearchInput && !wardSearchInput.contains(e.target) && 
+                wardSuggestions && !wardSuggestions.contains(e.target)) {
+                wardSuggestions.classList.add('hidden');
+            }
+        });
 
-        if (rankingSearch) {
-            rankingSearch.addEventListener('input', () => {
+        function setFullTableVisibility(show) {
+            if (!fullTableContainer || !rankingQuickView || !toggleTableBtn) return;
+            isFullTableVisible = !!show;
+            fullTableContainer.classList.toggle('hidden', !isFullTableVisible);
+            rankingQuickView.classList.toggle('hidden', isFullTableVisible);
+            toggleTableBtn.textContent = isFullTableVisible ? 'Quay lại xếp hạng nhanh' : 'Xem chi tiết tất cả';
+            if (rankingTitle) {
+                rankingTitle.textContent = isFullTableVisible ? 'Xếp hạng chi tiết' : 'Xếp hạng nhanh';
+            }
+            if (isFullTableVisible) {
+                fullTableContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            scheduleRankingPanelHeightUpdate();
+        }
+
+        if (toggleTableBtn && fullTableContainer && rankingQuickView) {
+            toggleTableBtn.addEventListener('click', () => setFullTableVisibility(!isFullTableVisible));
+        }
+
+        if (prevPageBtn) prevPageBtn.addEventListener('click', () => { currentPage--; refreshRankingTable(); });
+        if (nextPageBtn) nextPageBtn.addEventListener('click', () => { currentPage++; refreshRankingTable(); });
+        const debouncedRankingSearch = debounce(() => { currentPage = 1; refreshRankingTable(); }, 180);
+        if (rankingSearch) rankingSearch.addEventListener('input', debouncedRankingSearch);
+
+        sortButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.dataset.sortKey;
+                const [currKey, currDir] = currentSort.split('_');
+                const newDir = (currKey === key && currDir === 'desc') ? 'asc' : 'desc';
+                currentSort = `${key}_${newDir}`;
+                
+                sortIndicators.forEach(el => el.innerText = '');
+                const indicator = sortIndicators.get(key);
+                if (indicator) indicator.innerText = newDir === 'asc' ? '▲' : '▼';
+                
                 currentPage = 1;
                 refreshRankingTable();
             });
-        }
-        sortButtons.forEach(btn => {
-            btn.addEventListener('click', () => toggleSortForKey(btn.dataset.sortKey));
         });
 
-        if (prevPageBtn) {
-            prevPageBtn.addEventListener('click', () => {
-                currentPage = Math.max(1, currentPage - 1);
-                refreshRankingTable();
-            });
-        }
-        if (nextPageBtn) {
-            nextPageBtn.addEventListener('click', () => {
-                currentPage += 1;
-                refreshRankingTable();
-            });
-        }
-
-        function refreshMapLayout() {
-            if (map) {
-                map.invalidateSize();
-            }
-            if (geoJsonLayer) {
-                geoJsonLayer.eachLayer(updateLayerTooltip);
-            }
+        function onLocationClick() {
+            if (!navigator.geolocation) return showMessage("Trình duyệt không hỗ trợ vị trí.", 'error');
+            showMessage("Đang tìm vị trí...", 'info');
+            navigator.geolocation.getCurrentPosition(pos => {
+                const userPoint = turf.point([pos.coords.longitude, pos.coords.latitude]);
+                let found = null, foundLayer = null;
+                geoJsonLayer.eachLayer(layer => {
+                    if (!found && turf.booleanPointInPolygon(userPoint, layer.feature.geometry)) {
+                        found = layer.feature; foundLayer = layer;
+                    }
+                });
+                if (found) {
+                    const idx = getFeatureIndexByName(getWardName(found.properties));
+                    selectWardByIndex(idx, { layer: foundLayer });
+                } else {
+                    showMessage("Bạn đang ở ngoài khu vực bản đồ.", 'warn');
+                }
+            }, () => showMessage("Không thể truy cập vị trí.", 'error'));
         }
 
-        window.addEventListener('resize', refreshMapLayout);
+        function showMessage(msg, type) {
+            messageArea.innerText = msg;
+            messageArea.className = `text-center text-sm py-2 bg-gray-50 ${!msg ? 'hidden' : ''} ${type === 'error' ? 'text-red-500' : 'text-gray-500'}`;
+        }
 
-        updateModeButtons();
-        updateCigaretteDisplay();
-        
-        // When the page finishes loading, initialize the app
-        renderMapLegend();
-        window.onload = initializeMapAndData;
-
+        window.onload = () => {
+            renderMapLegend();
+            initializeMapAndData();
+        };
     </script>
-
 </body>
 </html>
