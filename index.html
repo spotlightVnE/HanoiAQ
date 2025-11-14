@@ -123,7 +123,7 @@
                 padding: 0.9rem 0.85rem 1.15rem !important;
             }
             .hero-section h1 {
-                font-size: 1.5rem;
+                font-size: 1.2rem;
                 line-height: 1.4;
             }
             .hero-section #cigarette-count {
@@ -594,7 +594,8 @@
             wardSearchSizer.innerText = (text.length > placeholder.length ? text : placeholder).replace(/\s/g, '\u00a0');
             
             // Add some buffer for cursor and aesthetic
-            const newWidth = Math.min(Math.max(wardSearchSizer.offsetWidth + 30, 30), 400);
+            const maxWidth = window.innerWidth <= 640 ? 280 : 400;
+            const newWidth = Math.min(Math.max(wardSearchSizer.offsetWidth + 30, 30), maxWidth);
             wardSearchInput.style.width = `${newWidth}px`;
             
             updateClearButtonVisibility();
