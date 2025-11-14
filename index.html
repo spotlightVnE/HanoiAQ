@@ -86,6 +86,99 @@
             #ward-search {
                 width: 100% !important;
             }
+            #map-legend {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+            #map-legend .legend-grid {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.5rem 0.75rem;
+            }
+            .legend-column {
+                gap: 0.4rem;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .legend-item {
+                font-size: 0.65rem;
+                align-items: flex-start;
+            }
+            .legend-label {
+                font-size: 0.65rem;
+                line-height: 1.1;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0;
+            }
+            .legend-label-range {
+                display: block;
+                font-size: 0.62rem;
+                font-weight: 500;
+                line-height: 1.1;
+            }
+            .hero-section {
+                padding: 0.9rem 0.85rem 1.15rem !important;
+            }
+            .hero-section h1 {
+                font-size: 1.5rem;
+                line-height: 1.4;
+            }
+            .hero-section #cigarette-count {
+                font-size: 2.5rem;
+            }
+            .hero-section .mode-btn {
+                font-size: 0.75rem;
+                padding: 0.35rem 0.7rem;
+            }
+            .hero-layout {
+                gap: 0.75rem !important;
+            }
+            .hero-stats {
+                gap: 0.6rem !important;
+            }
+            .page-stack > :not([hidden]) ~ :not([hidden]) {
+                margin-top: 0.45rem !important;
+            }
+            .page-stack {
+                padding: 0 !important;
+                gap: 0.45rem !important;
+            }
+            .mobile-compact {
+                padding: 0.85rem 1rem !important;
+            }
+            .map-card {
+                padding-top: 0.6rem !important;
+                padding-bottom: 0.75rem !important;
+            }
+            .map-card-header {
+                padding: 0.25rem 0.2rem !important;
+                margin-bottom: 0.3rem !important;
+            }
+            .ranking-table-scroll {
+                overflow: visible !important;
+                max-height: none !important;
+            }
+            .mobile-compact h3,
+            .mobile-compact h4 {
+                font-size: 0.95rem;
+            }
+            #ranking-panel-body {
+                min-height: 280px;
+            }
+            #ranking-search {
+                font-size: 0.8rem;
+            }
+            #ranking-table th,
+            #ranking-table td {
+                font-size: 0.72rem;
+                padding: 0.35rem 0.25rem;
+            }
+            section.mobile-compact p {
+                font-size: 0.72rem;
+            }
         }
 
         /* --- GLOBAL & LEGEND --- */
@@ -116,6 +209,43 @@
             text-transform: uppercase;
             font-size: 0.72rem;
             margin-right: 0.5rem;
+        }
+
+        #map-legend .legend-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.25rem;
+        }
+
+        .legend-column {
+            display: flex;
+            flex-direction: row;
+            gap: 0.75rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            color: #4b5563;
+        }
+
+        .legend-label {
+            font-weight: 600;
+            display: inline-flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+            align-items: baseline;
+        }
+
+        .legend-label-text {
+            display: inline;
+        }
+
+        .legend-label-range {
+            display: inline;
+            font-weight: 500;
         }
 
         .legend-square {
@@ -151,7 +281,7 @@
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 leading-relaxed min-h-screen flex flex-col app-shell">
 
-    <div class="w-full flex-1 flex flex-col space-y-4 px-2 md:px-4 py-4 overflow-hidden min-h-0 app-scroll">
+    <div class="w-full flex-1 flex flex-col space-y-4 px-2 md:px-4 py-3 md:py-4 overflow-hidden min-h-0 app-scroll page-stack">
         
         <main class="bg-white rounded-2xl shadow-sm border border-gray-200 shrink-0">
             
@@ -159,8 +289,8 @@
 
             <div id="results-state" class="transition-all duration-300">
                 
-                <div class="px-6 pt-8 pb-8 md:px-10">
-                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div class="px-6 pt-8 pb-8 md:px-10 hero-section">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 hero-layout">
                         
                         <div class="flex-1 space-y-2">
                             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight">
@@ -188,7 +318,7 @@
                             </div>
                         </div>
 
-                        <div class="flex flex-col items-start md:items-end gap-3">
+                        <div class="flex flex-col items-start md:items-end gap-3 hero-stats">
                             <div class="flex items-baseline gap-2">
                                 <span id="cigarette-count" class="text-5xl md:text-6xl font-black text-orange-500 tracking-tight leading-none">...</span>
                                 <span class="text-xl md:text-2xl font-bold text-orange-500">điếu thuốc</span>
@@ -209,10 +339,11 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden min-h-0 app-scroll">
             
-            <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-2xl shadow-sm lg:col-span-2 border border-gray-200 flex flex-col h-full overflow-hidden min-h-0 app-scroll">
-                <div class="flex justify-between items-center mb-3 px-1">
+            <section class="bg-white px-3 py-3 md:px-4 md:py-4 rounded-2xl shadow-sm lg:col-span-2 border border-gray-200 flex flex-col h-full overflow-hidden min-h-0 app-scroll mobile-compact map-card">
+                <div class="flex justify-between items-center mb-3 px-1 map-card-header">
                     <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        Bản đồ chất lượng không khí trung bình năm 2024
+                        <span class="hidden sm:inline">Bản đồ chất lượng không khí trung bình năm 2024</span>
+                        <span class="sm:hidden">Bản đồ chất lượng không khí 2024</span>
                     </h3>
                 </div>
                 <div id="map" class="flex-1 min-h-[240px]"></div>
@@ -220,7 +351,7 @@
             </section>
 
             <div class="flex flex-col gap-4 h-full overflow-hidden min-h-0">
-                <section class="bg-white px-4 py-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col flex-1 h-full overflow-hidden min-h-0 app-scroll">
+                <section class="bg-white px-4 py-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col flex-1 h-full overflow-hidden min-h-0 app-scroll mobile-compact">
                     <h3 id="ranking-title" class="text-lg font-bold text-gray-800 mb-3">Xếp hạng nhanh</h3>
                     
                     <div id="ranking-panel-body" class="flex-1 relative min-h-[360px] overflow-hidden">
@@ -246,7 +377,7 @@
                                 class="w-full px-4 py-2 text-sm border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 transition-shadow" />
 
                             <div class="flex-1 overflow-hidden border border-gray-100 rounded-lg">
-                                <div class="h-full overflow-auto custom-scrollbar">
+                                <div class="h-full overflow-auto custom-scrollbar ranking-table-scroll">
                                     <table id="ranking-table" class="w-full divide-y divide-gray-100 text-sm">
                                         <thead class="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] font-semibold sticky top-0">
                                             <tr>
@@ -291,7 +422,7 @@
                     </button>
                 </section>
 
-                <section class="bg-white px-4 py-4 rounded-xl shadow-sm border border-gray-200 text-[11px] text-gray-400 leading-relaxed space-y-2">
+                <section class="bg-white px-4 py-4 rounded-xl shadow-sm border border-gray-200 text-[11px] text-gray-400 leading-relaxed space-y-2 mobile-compact">
                     <p>Dữ liệu chất lượng không khí trung bình năm theo phường, xã được tính toán bởi <a href="https://geoi.edu.vn/vi/" target="_blank" class="text-orange-500 hover:underline">nhóm nghiên cứu GEOI</a> (Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội).</p>
                     <p>Quy đổi sang số điếu thuốc do VnExpress thực hiện, dựa trên nghiên cứu của <a href="http://berkeleyearth.org/archive/air-pollution-and-cigarette-equivalence/" target="_blank" class="text-orange-400 hover:underline">Berkeley Earth</a>. Trong đó, mỗi điếu thuốc một ngày tương đương khoảng 22 µg/m³ nồng độ PM2.5.</p>
                     <p>Dữ liệu dân số và ranh giới phường xã từ NXB Tài nguyên - Môi trường và Bản đồ Việt Nam. Bản đồ nền của Google Satellite.</p>
@@ -342,7 +473,6 @@
         let rankingData = [];
         let rankingByName = new Map();
         let currentSort = 'aqi_desc';
-        const rowsPerPage = 9;
         let currentPage = 1;
         let isFullTableVisible = false;
         
@@ -387,13 +517,24 @@
         function renderMapLegend() {
             if (!mapLegendContainer) return;
             const heading = '<div class="legend-heading">AQI</div>';
-            const items = aqiColorScale.map(item => `
-                <div class="flex items-center gap-2 text-xs text-gray-600">
-                    <div class="legend-square" style="background-color: ${item.color};"></div>
-                    <span class="font-bold">${item.label} (${item.range})</span>
+            const columns = [
+                aqiColorScale.slice(0, 3),
+                aqiColorScale.slice(3)
+            ];
+            const content = columns.map(group => `
+                <div class="legend-column">
+                    ${group.map(item => `
+                        <div class="legend-item">
+                            <div class="legend-square" style="background-color: ${item.color};"></div>
+                            <span class="legend-label">
+                                <span class="legend-label-text">${item.label}</span>
+                                <span class="legend-label-range">(${item.range})</span>
+                            </span>
+                        </div>
+                    `).join('')}
                 </div>
             `).join('');
-            mapLegendContainer.innerHTML = heading + items;
+            mapLegendContainer.innerHTML = heading + `<div class="legend-grid">${content}</div>`;
         }
 
         function updateSortIndicators(activeKey, direction) {
@@ -726,6 +867,10 @@
             if (populationInfoMobile) populationInfoMobile.innerText = populationText;
         }
 
+        const isMobileViewport = () => window.innerWidth <= 640;
+        const getQuickViewCount = () => isMobileViewport() ? 3 : 5;
+        const getRowsPerPage = () => isMobileViewport() ? 5 : 9;
+
         // --- RANKING & TABLE LOGIC ---
         function populateRanking(data) {
             if (!data || !data.features) return;
@@ -738,20 +883,24 @@
 
             rankingData.forEach((e, i) => e.rank = i + 1);
 
-            // Populate Quick Views
+            renderQuickLists();
+            refreshRankingTable();
+        }
+
+        function renderQuickLists() {
+            if (!rankingData.length) return;
+            const count = getQuickViewCount();
             if (topWorstList) {
-                topWorstList.innerHTML = rankingData.slice(0, 5).map(e => 
+                topWorstList.innerHTML = rankingData.slice(0, count).map(e => 
                     `<li class="flex justify-between"><span>${e.name}</span> <span class="font-bold text-red-600">${Math.round(e.aqi)}</span></li>`
                 ).join('');
             }
             if (topBestList) {
-                const best = [...rankingData].reverse().slice(0, 5);
+                const best = [...rankingData].reverse().slice(0, count);
                 topBestList.innerHTML = best.map(e => 
                     `<li class="flex justify-between"><span>${e.name}</span> <span class="font-bold text-green-600">${Math.round(e.aqi)}</span></li>`
                 ).join('');
             }
-            
-            refreshRankingTable();
         }
 
         function refreshRankingTable() {
@@ -774,6 +923,7 @@
                 return dir === 'asc' ? numA - numB : numB - numA;
             });
 
+            const rowsPerPage = getRowsPerPage();
             const totalPages = Math.ceil(rows.length / rowsPerPage) || 1;
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
@@ -849,6 +999,10 @@
         if (prevPageBtn) prevPageBtn.addEventListener('click', () => { currentPage--; refreshRankingTable(); });
         if (nextPageBtn) nextPageBtn.addEventListener('click', () => { currentPage++; refreshRankingTable(); });
         if (rankingSearch) rankingSearch.addEventListener('input', () => { currentPage = 1; refreshRankingTable(); });
+        window.addEventListener('resize', () => {
+            renderQuickLists();
+            refreshRankingTable();
+        });
 
         function onLocationClick() {
             if (!navigator.geolocation) return showMessage("Trình duyệt không hỗ trợ vị trí.", 'error');
