@@ -325,7 +325,7 @@
             }).setView(CONFIG.mapCenter, CONFIG.zoom.start);
 
             L.control.zoom({ position: 'bottomright' }).addTo(AppState.map);
-            L.tileLayer('https://mt.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { maxZoom: CONFIG.zoom.max }).addTo(AppState.map);
+            L.tileLayer('https://mt.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}&hl=vi', { maxZoom: CONFIG.zoom.max }).addTo(AppState.map);
 
             AppState.geoJsonLayer = L.geoJSON(AppState.wardData, {
                 style: f => ({
