@@ -333,7 +333,8 @@
                     fillColor: getColor(getProps(f.properties).aqi), fillOpacity: 0.7
                 }),
                 onEachFeature: (f, l) => {
-                    l.bindTooltip(`<div class="font-bold">${getProps(f.properties).name}</div><div class="text-xs">AQI: ${Math.round(getProps(f.properties).aqi)}</div>`, { sticky: true });
+                    const props = getProps(f.properties);
+                    l.bindTooltip(`<div class="font-bold">${props.name}</div><div class="text-xs">PM2.5: ${formatNum(props.pm25, 1)} µg/m³</div><div class="text-xs">AQI: ${Math.round(props.aqi)}</div>`, { sticky: true });
                     l.on('click', L.DomEvent.stopPropagation);
                     l.on('click', () => selectWard(AppState.featureIndexByName.get(getProps(f.properties).name.toLowerCase()), true));
                     l.on('mouseover', () => {
