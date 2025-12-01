@@ -52,10 +52,10 @@
         }
 
         /* Desktop Layout */
-        @media (min-width: 1000px) {
+        @media (min-width: 769px) {
             .app-shell { height: 100vh; overflow: hidden; }
         }
-        @media (max-width: 999px) {
+        @media (max-width: 768px) {
             .app-shell { height: auto; overflow: auto; }
             .page-stack { overflow: visible; }
         }
@@ -89,14 +89,18 @@
                                     <span id="typing-cursor" class="hidden w-0.5 h-7 md:h-8 bg-orange-600 align-bottom ml-0.5 -mb-1"></span>
                                 </span>
                             </span>
-                            <span class="block">tương đương hút <span id="cigarette-count" class="text-orange-500">...</span> điếu thuốc</span>
+                            <span class="block">tương đương hút <span id="cigarette-count" class="text-orange-500">...</span> điếu thuốc.</span>
                         </h1>
                         <div class="inline-flex bg-gray-100 p-1 rounded-lg mt-2">
                             <button class="mode-btn px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all text-orange-600 bg-white shadow-sm ring-1 ring-gray-200" data-mode="daily">mỗi ngày</button>
                             <button class="mode-btn px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all text-gray-400 hover:text-gray-600" data-mode="weekly">mỗi tuần</button>
                             <button class="mode-btn px-3 sm:px-4 py-1.5 rounded-md text-xs sm:text-sm font-bold transition-all text-gray-400 hover:text-gray-600" data-mode="monthly">mỗi tháng</button>
                         </div>
-                        <p id="population-info" class="text-xs sm:text-sm text-gray-500 font-medium">Có ... người chịu ảnh hưởng.</p>
+                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center items-center text-xs sm:text-sm text-gray-500 font-medium">
+                            <p id="pm25-info">Nồng độ PM2.5 trung bình ngày là <span id="pm25-value">...</span> µg/m³</p>
+                            <span class="hidden sm:inline text-gray-300">|</span>
+                            <p id="population-info">Có ... người chịu ảnh hưởng.</p>
+                        </div>
                     </div>
 
                     <div class="relative w-full max-w-lg z-20">
@@ -156,7 +160,7 @@
                                             <tr>
                                                 <th class="px-3 py-2 text-left bg-gray-50 cursor-pointer hover:text-orange-600" data-sort="name">Tên <span class="sort-icon"></span></th>
                                                 <th class="px-3 py-2 text-left bg-gray-50 cursor-pointer hover:text-orange-600" data-sort="aqi">AQI <span class="sort-icon">▼</span></th>
-                                                <th class="px-3 py-2 text-left bg-gray-50 cursor-pointer hover:text-orange-600" data-sort="pm25">PM2.5 <span class="sort-icon"></span></th>
+                                                <th class="px-3 py-2 text-left bg-gray-50 cursor-pointer hover:text-orange-600" data-sort="pm25">PM2.5 (ug/m³) <span class="sort-icon"></span></th>
                                                 <th class="px-3 py-2 text-left bg-gray-50 cursor-pointer hover:text-orange-600" data-sort="population">Dân số <span class="sort-icon"></span></th>
                                             </tr>
                                         </thead>
@@ -366,8 +370,9 @@
             // UI Updates
             AppState.currentBaseCigs = p.pm25 / 22;
             updateCigDisplay();
+            document.getElementById('pm25-value').innerText = formatNum(p.pm25, 1);
             els.popInfo.innerText = `Có ${p.pop > 0 ? p.pop.toLocaleString('vi-VN') : '...'} người chịu ảnh hưởng.`;
-            
+
             if (isUserAction) {
                 els.wardName.innerText = p.name;
                 els.typingCursor.classList.remove('is-typing');
@@ -398,8 +403,8 @@
         function updateRankingViews() {
             // 1. Quick Lists
             const renderList = (arr, el, colorClass) => {
-                el.innerHTML = arr.slice(0, 5).map(i => 
-                    `<li class="flex justify-between"><span>${i.name}</span><span class="font-bold ${colorClass}">${Math.round(i.aqi)}</span></li>`
+                el.innerHTML = arr.slice(0, 5).map((i, idx) =>
+                    `<li class="flex justify-between"><span><span class="font-bold text-gray-400 mr-2">#${idx + 1}</span>${i.name}</span><span class="font-bold ${colorClass}">${Math.round(i.aqi)}</span></li>`
                 ).join('');
             };
             renderList(AppState.rankingData, els.topWorst, 'text-red-600');
