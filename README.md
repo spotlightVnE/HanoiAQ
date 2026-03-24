@@ -70,8 +70,7 @@ Per [Berkeley Earth](http://berkeleyearth.org/archive/air-pollution-and-cigarett
 
 ---
 
-## To update the data
+## Notes
 
-1. Download new data from the three sources above
-2. Re-run `Code.ipynb` (kept separately — ask the Spotlight team for a copy)
-3. Replace `HanoiAQ.geojson` with the newly generated file
+- `HanoiAQ.geojson` in this repo contains pre-processed, ward-level data and is self-contained — the viz does not fetch from any external source at runtime.
+- The data sources and processing steps above document the original research methodology for reference.
