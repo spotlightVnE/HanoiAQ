@@ -11,22 +11,42 @@ Interactive map showing Hanoi's air quality by ward, with PM2.5 concentration an
 | File | Description |
 |------|-------------|
 | `index.html` | Interactive ward map (Leaflet + Tailwind) |
-| `HanoiAQ.geojson` | Ward-level GeoJSON with AQI and PM2.5 values pre-merged |
+| `HanoiAQ.geojson` | Ward-level GeoJSON with AQI and PM2.5 values pre-merged (126 wards/communes) |
 
 ---
 
-## How the data was built
+## Data source
 
-Data comes from **three third-party sources** — no proprietary data is included. The processing work (done in `Code.ipynb`, not in this repo) involved:
+Ward-level PM2.5 and AQI data was provided by the **[GEOI research group](https://geoi.edu.vn/vi/)** (Trường Đại học Công nghệ, Đại học Quốc gia Hà Nội — VNU University of Engineering and Technology).
 
-1. **Converting all sources to a common VN AQI scale**
-   - US Embassy: raw PM2.5 daily averages → VN AQI (TCMT QĐ 1459/2019)
-   - AQICN: US AQI → back-convert to PM2.5 → VN AQI
-   - OpenAQ API (`/v3/sensors/{id}/days`): PM2.5 daily avg → VN AQI
+GEOI computes annual average PM2.5 concentrations at ward/commune resolution for Hanoi. Their methodology should be referenced for details on how PM2.5 values are modeled (likely combining ground station measurements, satellite-derived AOD, and spatial interpolation/dispersion modeling).
 
-2. **Filtering to the pollution season**: Oct 1 – Jan 9 (2020–2025), when Hanoi's air quality is typically worst
+This data was provided to VnExpress Spotlight in exchange for the administrative boundary dataset (post-merger ward boundaries) that the Spotlight team had prepared.
 
-3. **Spatial matching**: Station readings were matched to Hanoi ward boundaries to produce `HanoiAQ.geojson`
+### GeoJSON properties
+
+| Property | Description |
+|---|---|
+| `Name` | Ward/commune name |
+| `Type` | `phường` (urban ward) or `xã` (commune) |
+| `Merge` | Which pre-merger wards were combined (post-2025 admin boundary reform) |
+| `PM2.5` | Annual average PM2.5 concentration (µg/m³), Vietnamese decimal format (e.g. `45,3`) |
+| `AQI` | Corresponding VN AQI value |
+| `Pop` | Population |
+
+---
+
+## Background: initial open-source research
+
+Before GEOI provided their data, the initial analysis was built from three open sources using a processing notebook (`Code.ipynb`, not in this repo):
+
+1. **US Embassy Hanoi** — hourly PM2.5 at the embassy station ([public download](https://www.stateair.net/web/historical/1/4.html))
+2. **AQICN** — daily AQI for multiple Hanoi stations ([aqicn.org](https://aqicn.org/data-platform/token/))
+3. **OpenAQ v3 API** — daily PM2.5 for 10 suburban stations (`GET /v3/sensors/{id}/days`)
+
+This involved converting all sources to VN AQI (per TCMT QĐ 1459/2019), filtering to the pollution season (Oct–Jan, 2020–2025), and spatially matching station readings to ward boundaries.
+
+The GEOI dataset replaced this approach with higher-quality, ward-level modeled data covering all 126 wards/communes in Hanoi.
 
 ### VN AQI formula (PM2.5, per TCMT QĐ 1459/2019)
 
@@ -45,32 +65,8 @@ Per [Berkeley Earth](http://berkeleyearth.org/archive/air-pollution-and-cigarett
 
 ---
 
-## Data sources
-
-| Source | What it provides | Access |
-|--------|-----------------|--------|
-| US Embassy Hanoi | Hourly PM2.5 at embassy station | [Public download](https://www.stateair.net/web/historical/1/4.html) |
-| AQICN | Daily AQI for multiple Hanoi stations | [aqicn.org/data-platform/token/](https://aqicn.org/data-platform/token/) |
-| OpenAQ v3 API | Daily PM2.5 for 10 suburban Hanoi stations | `GET /v3/sensors/{id}/days` — requires API key |
-
-### OpenAQ station IDs used
-
-| Station | Sensor ID |
-|---------|-----------|
-| An Khánh | 7772012 |
-| Liên Quan | 7772053 |
-| Minh Khai - Bắc Từ Liêm | 7772087 |
-| Pháp Vân | 7772016 |
-| Sài Sơn | 7772076 |
-| Lưu Quang Vũ | 7772032 |
-| Sóc Sơn | 7772037 |
-| Vân Đình | 7771984 |
-| Vân Hà | 7772059 |
-| Xuân Mai | 7772015 |
-
----
-
 ## Notes
 
-- `HanoiAQ.geojson` in this repo contains pre-processed, ward-level data and is self-contained — the viz does not fetch from any external source at runtime.
-- The data sources and processing steps above document the original research methodology for reference.
+- `HanoiAQ.geojson` is self-contained — the viz does not fetch from any external source at runtime.
+- To update the data, request updated ward-level PM2.5 from GEOI and regenerate the GeoJSON with the same property schema.
+- Contact GEOI for their full methodology documentation if publishing methodology details or extending the analysis to other cities.
